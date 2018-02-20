@@ -47,3 +47,6 @@ pipenv run python -m unittest tests.test_BaseBlockChain
 ```
 ./tests/test.sh
 ```
+
+## Development
+For REST API look at [Wiki](https://github.com/BAlchemyLab/bal/wiki).
