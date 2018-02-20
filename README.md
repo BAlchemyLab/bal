@@ -1,7 +1,5 @@
 # Block[Chain] Alchemy Laboratory Framework
 
-[![Build Status](https://api.travis-ci.org/BAlchemyLab/bal.svg?branch=master)(https://api.travis-ci.org/BAlchemyLab/bal)
-
 The source code of originally based on post on [Building a Blockchain](https://medium.com/p/117428612f46) of Daniel van Flymen. 
 
 ## Installation
