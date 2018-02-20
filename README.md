@@ -8,7 +8,7 @@ The source code of originally based on post on [Building a Blockchain](https://m
 2. Install [pipenv](https://github.com/kennethreitz/pipenv). 
 
 ```
-$ pip install pipenv 
+$ pip3.6 install pipenv 
 ```
 
 3. Create a _virtual environment_ and specify the Python version to use. 
