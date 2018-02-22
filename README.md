@@ -20,13 +20,13 @@ $ pipenv --python=python3.6
 4. Install requirements.  
 
 ```
-$ pipenv install 
+$ pipenv install flask==0.12.2 requests==2.18.4
 ``` 
 
 5. Run the server:
     * `$ pipenv run python blockchain.py` 
-    * `$ pipenv run python blockchain.py -p 5001`
-    * `$ pipenv run python blockchain.py --port 5002`
+    * `$ pipenv run python blockchain.py -p 5001 -d pow.db -v pow:2`
+    * `$ pipenv run python blockchain.py --port 5002 --db quant.db --variant quant`
     
 ## Parameters
 
@@ -41,12 +41,17 @@ $ pipenv install
 For QuantumBlockChain, the [keyworker](https://github.com/BAlchemyLab/qnet/tree/master/keyworker) service must be started.
 
 ## Testing
+Internal test:
 ```
 pipenv run python -m unittest tests.test_BaseBlockChain
 ```
+
+Test REST API:
+1. Run blockchain.py servers on ports 5000 and 5001.
+2. Run test script:
 ```
 ./tests/test.sh
 ```
 
-## Development
-For REST API look at [Wiki](https://github.com/BAlchemyLab/bal/wiki).
+## More information
+you may find in the project's [Wiki](https://github.com/BAlchemyLab/bal/wiki).
