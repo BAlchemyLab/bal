@@ -1,4 +1,4 @@
-#!/bin/env python3.6
+#!/bin/env python
 
 from uuid import uuid4
 
@@ -61,7 +61,7 @@ def new_transaction():
     # Create a new Transaction
     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
 
-    response = {'message': f'Transaction will be added to Block {index}'}
+    response = {'message': 'Transaction will be added to Block {}'.format(index)}
     return jsonify(response), 201
 
 

@@ -1,3 +1,6 @@
+# Python 3 -> 2 compatibility
+from builtins import super
+
 from BaseBlockChain import BaseBlockChain
 import hashlib
 
@@ -21,8 +24,8 @@ class POWBlockChain(BaseBlockChain):
 
         while current_index < len(chain):
             block = chain[current_index]
-            print(f'{last_block}')
-            print(f'{block}')
+            print('{}'.format(last_block))
+            print('{}'.format(block))
             print("\n-----------\n")
             # Check that the hash of the block is correct
             if block['previous_hash'] != self.hash(last_block):
@@ -66,7 +69,7 @@ class POWBlockChain(BaseBlockChain):
         :return: <bool> True if correct, False if not.
         """
 
-        guess = f'{last_proof}{proof}{last_hash}'.encode()
+        guess = '{}{}{}'.format(last_proof, proof, last_hash).encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:self.difficulty] == "0" * self.difficulty
 

@@ -1,4 +1,9 @@
-from urllib.parse import urlparse
+# Python 3 -> 2 compatibility
+try: # Python 3
+    from urllib.parse import urlparse
+except:
+    from urlparse import urlparse
+
 import requests
 import hashlib
 import json
@@ -7,7 +12,7 @@ import abc
 import shelve
 
 
-class BaseBlockChain:
+class BaseBlockChain(object):
     def __init__(self):
         self.current_transactions = []
         self.chain = []
@@ -76,7 +81,7 @@ class BaseBlockChain:
 
         # Grab and verify the chains from all the nodes in our network
         for node in neighbours:
-            response = requests.get(f'http://{node}/chain')
+            response = requests.get('http://{}/chain'.format(node))
 
             if response.status_code == 200:
                 length = response.json()['length']

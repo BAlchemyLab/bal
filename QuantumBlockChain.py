@@ -1,3 +1,6 @@
+# Python 3 -> 2 compatibility
+from builtins import super
+
 from BaseBlockChain import BaseBlockChain
 import requests
 import hashlib
@@ -18,7 +21,7 @@ class QuantumBlockChain(BaseBlockChain):
 
     def getlastkey(self):
         try:
-            response = requests.post(f'http://{self.kwip}:{self.kwport}', data="last")
+            response = requests.post('http://{}:{}'.format(self.kwip, self.kwport), data="last")
             response.raise_for_status()
         except:
             return 0
@@ -32,7 +35,7 @@ class QuantumBlockChain(BaseBlockChain):
 
     def getkeybysha(self, sha):
         try:
-            response = requests.post(f'http://{self.kwip}:{self.kwport}', data=f'key{sha}')
+            response = requests.post('http://{}:{}'.format(self.kwip, self.kwport), data='key{}'.format(sha))
             response.raise_for_status()
         except:
             return 0
@@ -57,8 +60,8 @@ class QuantumBlockChain(BaseBlockChain):
 
         while current_index < len(chain):
             block = chain[current_index]
-            print(f'{last_block}')
-            print(f'{block}')
+            print('{}'.format(last_block))
+            print('{}'.format(block))
             print("\n-----------\n")
             # Check that the hash of the block is correct
             if block['previous_hash'] != self.hash(last_block):
@@ -75,7 +78,7 @@ class QuantumBlockChain(BaseBlockChain):
         if quantum_key == 0:
             print("NO SUCH KEY")
             return False
-        guess = f'{chain[-1]["proof"]}{quantum_key["key"]}'.encode()
+        guess = '{}{}'.format(chain[-1]["proof"], quantum_key["key"]).encode()
         guess_proof = hashlib.sha256(guess).hexdigest()
         return guess_proof == quantum_proof
 
@@ -92,7 +95,7 @@ class QuantumBlockChain(BaseBlockChain):
 
         last_proof = last_block['proof']
         last_hash = self.hash(last_block)
-        raw_proof = f'{last_proof}{last_hash}'.encode()
+        raw_proof = '{}{}'.format(last_proof, last_hash).encode()
         proof = hashlib.sha256(raw_proof).hexdigest()
         return proof
 
@@ -108,13 +111,13 @@ class QuantumBlockChain(BaseBlockChain):
 
         """
 
-        guess = f'{last_proof}{last_hash}'.encode()
+        guess = '{last_proof}{last_hash}'.format(last_proof=last_proof, last_hash=last_hash).encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash == proof
 
     def full_chain(self):
         quantum_key = self.getlastkey()
-        guess = f'{self.chain[-1]["proof"]}{quantum_key["key"]}'.encode()
+        guess = '{}{}'.format(self.chain[-1]["proof"], quantum_key["key"]).encode()
         guess_proof = hashlib.sha256(guess).hexdigest()
         response = {
             'chain': self.chain,
