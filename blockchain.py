@@ -1,8 +1,5 @@
 #!/bin/env python
 
-from uuid import uuid4
-
-import requests
 from flask import Flask, jsonify, request
 
 # Instantiate the Node
@@ -11,8 +8,6 @@ from POWBlockChain import POWBlockChain
 
 app = Flask(__name__)
 
-# Generate a globally unique address for this node
-node_identifier = str(uuid4()).replace('-', '')
 
 # Instantiate the Blockchain
 blockchain = 0
@@ -28,7 +23,7 @@ def mine():
     # The sender is "0" to signify that this node has mined a new coin.
     blockchain.new_transaction(
         sender="0",
-        recipient=node_identifier,
+        recipient=blockchain.node_identifier,
         amount=1,
     )
 
@@ -69,6 +64,7 @@ def new_transaction():
 def full_chain():
     return jsonify(blockchain.full_chain()), 200
 
+
 @app.route('/nodes', methods=['GET'])
 def get_nodes():
     response = {
@@ -76,6 +72,7 @@ def get_nodes():
         'total_nodes': list(blockchain.nodes),
     }
     return jsonify(response)
+
 
 @app.route('/nodes', methods=['DELETE'])
 def remove_nodes():
@@ -85,6 +82,7 @@ def remove_nodes():
         'total_nodes': list(blockchain.nodes),
     }
     return jsonify(response)
+
 
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
@@ -128,14 +126,10 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
-    parser.add_argument('-k', '--kwport', default=55554, type=int, help='port keyworker to listen on')
-    parser.add_argument('-i', '--ip', default='127.0.0.1', help='ip keyworker to listen on')
     parser.add_argument('-d', '--db', default='', help='db file')
     parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow[:difficulty]" or "quant"')
     args = parser.parse_args()
     port = args.port
-    kwport = args.kwport
-    kwip = args.ip
     dbfile = args.db
     if args.variant.find('pow') == 0:
         pow = args.variant.split(':')
@@ -144,9 +138,9 @@ if __name__ == '__main__':
         else:
             blockchain = POWBlockChain()
     elif args.variant == 'quant':
-        blockchain = QuantumBlockChain(kwip, kwport)
+        blockchain = QuantumBlockChain(app)
     else:
         blockchain = POWBlockChain()
     if args.db:
         blockchain.init_db(dbfile)
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, threaded=True)
