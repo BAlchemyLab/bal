@@ -4,29 +4,19 @@ The source code of originally based on post on [Building a Blockchain](https://m
 
 ## Installation
 
-1. Make sure [Python 3.6+](https://www.python.org/downloads/) is installed. 
-2. Install [pipenv](https://github.com/kennethreitz/pipenv). 
+1. Make sure [Python] 2 or 3 (https://www.python.org/downloads/) is installed. 
+
+
+2. Install requirements.  
 
 ```
-$ pip3.6 install pipenv 
-```
-
-3. Create a _virtual environment_ and specify the Python version to use. 
-
-```
-$ pipenv --python=python3.6
-```
-
-4. Install requirements.  
-
-```
-$ pipenv install flask==0.12.2 requests==2.18.4
+$ pip install flask==0.12.2 requests==2.18.4
 ``` 
 
 5. Run the server:
-    * `$ pipenv run python blockchain.py` 
-    * `$ pipenv run python blockchain.py -p 5001 -d pow.db -v pow:2`
-    * `$ pipenv run python blockchain.py --port 5002 --db quant.db --variant quant`
+    * `$ ./blockchain.py` 
+    * `$ python2 blockchain.py -p 5001 -d pow.db -v pow:2`
+    * `$ python3 blockchain.py --port 5002 --db quant.db --variant quant`
     
 ## Parameters
 
