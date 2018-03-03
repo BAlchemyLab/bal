@@ -31,7 +31,7 @@ For QuantumBlockChain, the [keyworker](https://github.com/BAlchemyLab/qnet/tree/
 ## Testing
 Internal test:
 ```
-pipenv run python -m unittest tests.test_BaseBlockChain
+python -m unittest tests.test_BaseBlockChain
 ```
 
 Test REST API POW:
