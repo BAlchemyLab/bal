@@ -7,10 +7,10 @@ The source code of originally based on post on [Building a Blockchain](https://m
 1. Make sure [Python](https://www.python.org/downloads/) 2 or 3 is installed. 
 
 
-2. Install requirements.  
+2. Install requirements (preferably inside a [virtual environment] (https://docs.python.org/3/tutorial/venv.html)).  
 
 ```
-$ pip install flask==0.12.2 requests==2.18.4
+$ pip install -r requirements.txt
 ``` 
 
 5. Run the server:
