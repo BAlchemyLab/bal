@@ -41,6 +41,14 @@ class QuantumBlockChain(BaseBlockChain):
             }
             return jsonify(response), 200
 
+        @app.route('/keyworker', methods=['DELETE'])
+        def clear_keyworkers():
+            keyworkers = []
+            response = {
+                'message': 'Keyworkers removed',
+            }
+            return jsonify(response)
+ 
         @app.route('/chain', methods=['POST'])
         def full_chain_post():
             values = request.get_json()
