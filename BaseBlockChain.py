@@ -10,6 +10,7 @@ import json
 from time import time
 import abc
 import shelve
+from flask import jsonify
 
 
 class BaseBlockChain(object):
@@ -133,3 +134,71 @@ class BaseBlockChain(object):
     @abc.abstractmethod
     def full_chain(self):
         return
+
+    # REST API functions
+    def mine(self):
+        # We run the proof of work algorithm to get the next proof...
+        last_block = self.last_block
+        proof = self.proof_of(last_block)
+
+        # We must receive a reward for finding the proof.
+        # The sender is "0" to signify that this node has mined a new coin.
+        self.new_transaction(
+            sender="0",
+            recipient=self.node_identifier,
+            amount=1,
+        )
+
+        # Forge the new Block by adding it to the chain
+        previous_hash = self.hash(last_block)
+
+        self.save_db()
+
+        block = self.new_block(proof, previous_hash)
+
+        response = {
+            'message': "New Block Forged",
+            'index': block['index'],
+            'transactions': block['transactions'],
+            'proof': block['proof'],
+            'previous_hash': block['previous_hash']
+        }
+        return jsonify(response), 200
+
+    def get_nodes(self):
+        response = {
+            'message': 'Nodes',
+            'total_nodes': list(self.nodes),
+        }
+        return jsonify(response)
+
+    def register_nodes(self, values):
+        nodes = values.get('nodes')
+        if nodes is None:
+            return "Error: Please supply a valid list of nodes", 400
+
+        for node in nodes:
+            self.register_node(node)
+
+        response = {
+            'message': 'New nodes have been added',
+            'total_nodes': list(self.nodes),
+        }
+        return jsonify(response), 201
+
+    def consensus(self):
+        replaced = self.resolve_conflicts()
+
+        if replaced:
+            self.save_db()
+            response = {
+                'message': 'Our chain was replaced',
+                'new_chain': self.chain
+            }
+        else:
+            response = {
+                'message': 'Our chain is authoritative',
+                'chain': self.chain
+            }
+
+        return jsonify(response), 200

@@ -49,5 +49,22 @@ Test REST API QUANTUM:
 ./tests/testquantum.sh
 ```
 
+## Blockchain Mininet network
+Mininet's custom setup for BAL classes balmn.py add several types of hosts:
+* btc -- bcnode.BtcNode
+* eth -- bcnode.EthNode
+* pow -- bcnode.POWNode
+* qkd -- bcnode.QNode
+
+For example:
+```
+mn --custom=balmn.py --host=btc
+```
+
+Testing:
+```
+./bcmn_test.py [host_type]
+```
+
 ## More information
 you may find in the project's [Wiki](https://github.com/BAlchemyLab/bal/wiki).

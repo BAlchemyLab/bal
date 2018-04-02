@@ -5,6 +5,7 @@ BCNodes provide a simple abstraction for interacting with Block[Chains]. Local n
 """
 
 import os
+
 from subprocess import call
 from multiprocessing import Process
 
@@ -12,16 +13,18 @@ from mininet.util import quietRun
 from mininet.log import info, error, warn, debug
 from mininet.moduledeps import pathCheck
 
-from mininet.node import Node 
+from mininet.cli import CLI
+from mininet.node import Host, CPULimitedHost
 
-class BCNode( Node ):
+#class BCNode( CPULimitedHost, CLI ):
+class BCNode( CPULimitedHost):
     """A BCNode is a Node that is running (or has execed?) an
        block[chain] application."""
 
-    def __init__( self, name, inNamespace=False,
-                  server='', sargs='', sdir=None,
-                  client='bash', cargs='', cdir=None,
-                  ip="127.0.0.1", **params ):
+    def __init__( self, name, inNamespace=True,
+                  server='', sargs='', sdir='/tmp/bcn',
+                  client='', cargs='{command}', cdir=None,
+                  ip="127.0.0.1", port='', **params ):
         # Server params
         self.server = server
         self.sargs = sargs
@@ -32,7 +35,8 @@ class BCNode( Node ):
         self.cdir = cdir
 
         self.ip = ip
-        Node.__init__( self, name, inNamespace=inNamespace,
+        self.port = port
+        CPULimitedHost.__init__( self, name, inNamespace=inNamespace,
                        ip=ip, **params  )
 
     def start( self ):
@@ -43,10 +47,15 @@ class BCNode( Node ):
             cout = '/tmp/bc_' + self.name + '.log'
             if self.sdir is not None:
                 self.cmd( 'cd ' + self.sdir )
-            print( self.server + ' ' + self.sargs +
-                   ' 1>' + cout + ' 2>' + cout + ' &' )
-            self.cmd( self.server + ' ' + self.sargs +
-                      ' 1>' + cout + ' 2>' + cout + ' &' )
+            cmd = self.server
+            if self.sargs:
+                cmd += " " + self.sargs.format(name=self.name,
+                                               IP=self.IP(),
+                                               port=self.port,
+                                               cdir=self.cdir,
+                                               sdir=self.sdir)
+            debug( cmd + ' 1>' + cout + ' 2>' + cout + ' &' )
+            self.cmd( cmd + ' 1>' + cout + ' 2>' + cout + ' &' )
             self.execed = False
 
     def stop( self, *args, **kwargs ):
@@ -54,20 +63,6 @@ class BCNode( Node ):
         self.cmd( 'kill %' + self.server )
         self.cmd( 'wait %' + self.server )
         super( BCNode, self ).stop( *args, **kwargs )
-
-    def IP( self, intf=None ):
-        "Return IP address of the BCNode"
-        if self.intfs:
-            ip = Node.IP( self, intf )
-        else:
-            ip = self.ip
-        return ip
-
-    def __repr__( self ):
-        "More informative string representation"
-        return '<%s %s: %s pid=%s> ' % (
-            self.__class__.__name__, self.name,
-            self.IP(), self.pid )
 
     def isAvailable( self ):
         "Is executables available?"
@@ -78,97 +73,137 @@ class BCNode( Node ):
             cmd += self.client
         return quietRun(cmd)
 
-    def CLI(self):
-        """Start <bcnode> <args> on node.
-           Log to /tmp/bcN.log"""
-        pathCheck( self.client )
+
+    def call(self, command, data=''):
+        """Call <client> <cargs> on node."""
         if self.cdir is not None:
             self.cmd( 'cd ' + self.cdir )
-        print(self.client + " " + self.cargs)
-        call( self.client + " " + self.cargs, shell=True )
+        cmd = self.client
+        pathCheck( cmd )
 
-        
+        if self.cargs:
+            cmd += " " + self.cargs.format(command=command,
+                                           data=data,
+                                           name=self.name,
+                                           IP=self.IP(),
+                                           port=self.port,
+                                           cdir=self.cdir,
+                                           sdir=self.sdir)
+            if data:
+                cmd += " " + self.cargs.format(data=data)
+        else:
+            cmd += " "  + command
+
+        result = self.cmdPrint( cmd )
+
+        debug("command: %s = %s" % (cmd, result))
+        return result
 
 class EthNode(BCNode):
     """A EthNode is a BCNode that is running an Geth application."""
 
-    def __init__( self, name, bcclass=None, inNamespace=False,
+    def __init__( self, name, bcclass=None, inNamespace=True,
                   server='geth',
-                  sargs='--testnet --syncmode light --cache 1024 ' +
-                  '--ipcpath ~/.ethereum/geth.ipc --rpc --ws',
-                  sdir=None,
+                  sargs='--testnet --syncmode light --cache 1024 --rpc --ws',
+                  sdir='/tmp/bcn/',
                   client='geth',
-                  cargs='attach ipc:' + os.environ['HOME'] +
-                  '/.ethereum/geth.ipc',
+                  cargs='--exec {command} --datadir={sdir}/{IP} attach ipc:{sdir}/{IP}/geth.ipc',
                   cdir=None,
-                  ip="127.0.0.1", **params ):
+                  ip="127.0.0.1", port='', **params ):
 
-        BCNode.__init__( self, name,
+        BCNode.__init__( self, name, inNamespace=inNamespace,
                          server=server, sargs=sargs, sdir=sdir,
                          client=client, cargs=cargs, cdir=cdir,
-                         ip=ip, **params )
+                         ip=ip, port=port, **params )
+
+    def start( self ):
+        """Start <bcnode> <args> on node.
+           Log to /tmp/bc_<name>.log"""
+ 
+        if self.server:
+            pathCheck( self.server )
+            cout = '/tmp/bc_' + self.name + '.log'
+            if self.sdir is not None:
+                import os
+                self.cmd( 'cd ' + self.sdir )
+                sdir = '%s/%s' % (self.sdir, self.IP())
+                try:
+                    os.stat(sdir)
+                except:
+                    os.mkdir(sdir)
+                self.sargs += ' --datadir=%s --ipcpath %s/geth.ipc' % \
+                              (sdir, sdir)
+            debug( self.server + ' ' + self.sargs +
+                   ' 1>' + cout + ' 2>' + cout + ' &' )
+            self.cmd( self.server + ' ' + self.sargs +
+                      ' 1>' + cout + ' 2>' + cout + ' &' )
+            self.execed = False
 
 class BtcNode(BCNode):
     """A BtcNode is a BCNode that is running an Bitcoin application."""
 
-    def __init__( self, name, bcclass=None, inNamespace=False,
-                  server='bitcoind', sargs='-regtest', sdir=None,
-                  client='bash', cargs='', cdir=None,
-                  ip="127.0.0.1", **params ):
+    def __init__( self, name, bcclass=None, inNamespace=True,
+                  server='bitcoind', sargs='-regtest', sdir='/tmp/bcn',
+                  client='bitcoin-cli',
+                  cargs='-regtest -datadir={sdir}/{IP} {command}',
+                  cdir=None,
+                  ip="127.0.0.1", port='', **params ):
 
-        BCNode.__init__( self, name,
+        BCNode.__init__( self, name, inNamespace=inNamespace,
                          server=server, sargs=sargs, sdir=sdir,
                          client=client, cargs=cargs, cdir=cdir,
-                         ip=ip, **params )
+                         ip=ip, port=port, **params )
+
+    def start( self ):
+        """Start <bcnode> <args> on node.
+           Log to /tmp/bc_<name>.log"""
+        if self.server:
+            pathCheck( self.server )
+            cout = '/tmp/bc_' + self.name + '.log'
+            if self.sdir is not None:
+                import os
+                self.cmd( 'cd ' + self.sdir )
+                sdir = '%s/%s' % (self.sdir, self.IP())
+                try:
+                    os.stat(sdir)
+                except:
+                    os.mkdir(sdir)
+                self.sargs += ' -datadir=' + sdir
+            debug( self.server + ' ' + self.sargs +
+                   ' 1>' + cout + ' 2>' + cout + ' &' )
+            self.cmd( self.server + ' ' + self.sargs +
+                      ' 1>' + cout + ' 2>' + cout + ' &' )
+            self.execed = False
 
 class POWNode(BCNode):
     """A POWNode is a BCNode that is running an POWBlockChain."""
 
-    def __init__( self, name, bcclass=None, inNamespace=False,
-                  server='', sargs={'host':'0.0.0.0','port':5000,
-                                    'difficulty':4, 'db':'pow.db'},
-                  sdir=None,
-                  client='bash', cargs='', cdir=None,
-                  ip="127.0.0.1", **params ):
+    def __init__( self, name, bcclass=None, inNamespace=True,
+                  server='blockchain.py',
+                  sargs='-p {port} -d {sdir}/pow-{IP}.db',
+                  sdir='/tmp/bcn/',
+                  client='curl',
+                  cargs="-s -X GET -H 'Content-Type: application/json' -d '{data}' http://{IP}:{port}/{command}",
+                  cdir=None,
+                  ip="127.0.0.1", port='5000', **params ):
 
-        BCNode.__init__( self, name,
+        BCNode.__init__( self, name, inNamespace=inNamespace,
                          server=server, sargs=sargs, sdir=sdir,
                          client=client, cargs=cargs, cdir=cdir,
-                         ip=ip, **params )
-
-    def app(self):
-        from POWBlockChain import POWBlockChain
-        import blockchain
-
-        args = self.sargs
-        blockchain.blockchain = POWBlockChain(difficulty=args['difficulty'])
-        if args['db']:
-            blockchain.blockchain.init_db(args['db'])
-        blockchain.app.run(host=args['host'], port=args['port'], threaded=True)
-
-    def start( self ):
-        """Start <pownode> <args> on node."""
-        if self.server:
-            BCNode.start(self)
-        else:
-            self.server_process = Process(target=self.app)
-            self.server_process.start()
-
-    def stop( self, *args, **kwargs ):
-         self.server_process.terminate()
-         super( BCNode, self ).stop( *args, **kwargs )
-
+                         ip=ip, port=port, **params )
 class QNode(BCNode):
     """A QNode is a BCNode that is running an QuantumBlockChain application."""
 
-    def __init__( self, name, bcclass=None, inNamespace=False,
-                  server='', sargs={'host':'0.0.0.0','port':5000,
-                                    'db':'quant.db'},
-                  sdir=None,
-                  client='bash', cargs='', cdir=None,
+    def __init__( self, name, bcclass=None, inNamespace=True,
+                  server='blockchain.py',
+                  sargs='-p {port} -d {sdir}/qkd-{IP}.db',
+                  sdir='/tmp/bcn',
+                  client='curl',
+                  cargs="-s -X GET -H 'Content-Type: application/json' -d '{data}' http://{IP}:{port}/{command}",
+                  cdir=None,
                   keyworker='keyworker', kargs='-d 1', kdir=None,
                   qkdemu='qkdemu', eargs='http://localhost:55554', edir=None,
-                  ip="127.0.0.1", **params ):
+                  ip="127.0.0.1", port='5000', **params ):
 
         # Keyworker params
         self.keyworker = keyworker
@@ -180,32 +215,10 @@ class QNode(BCNode):
         self.eargs = eargs
         self.edir = edir
 
-        BCNode.__init__( self, name,
+        BCNode.__init__( self, name, inNamespace=inNamespace,
                          server=server, sargs=sargs, sdir=sdir,
                          client=client, cargs=cargs, cdir=cdir,
-                         ip=ip, **params )
-
-    def app(self):
-        from QuantumBlockChain import QuantumBlockChain
-        import blockchain
-
-        args = self.sargs
-        blockchain.blockchain = QuantumBlockChain(blockchain.app)
-        if args['db']:
-            blockchain.blockchain.init_db(args['db'])
-        blockchain.app.run(host=args['host'], port=args['port'], threaded=True)
-
-    def start( self ):
-        """Start <qnode> <sargs> on node."""
-        if self.server:
-            BCNode.start(self)
-        else:
-            self.server_process = Process(target=self.app)
-            self.server_process.start()
-
-    def stop( self, *args, **kwargs ):
-         self.server_process.terminate()
-         super( BCNode, self ).stop( *args, **kwargs )
+                         ip=ip, port=port, **params )
 
     def kwstart( self ):
         """Start keyworker on node.
@@ -215,7 +228,7 @@ class QNode(BCNode):
             cout = '/tmp/kw_' + self.name + '.log'
             if self.kdir is not None:
                 self.cmd( 'cd ' + self.kdir )
-            print( self.keyworker + ' ' + self.kargs +
+            debug( self.keyworker + ' ' + self.kargs +
                    ' 1>' + cout + ' 2>' + cout + ' &' )
             self.cmd( self.keyworker + ' ' + self.kargs +
                       ' 1>' + cout + ' 2>' + cout + ' &' )
