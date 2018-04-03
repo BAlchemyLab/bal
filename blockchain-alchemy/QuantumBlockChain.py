@@ -8,7 +8,7 @@ from builtins import super
 from BaseBlockChain import BaseBlockChain
 import requests
 import hashlib
-from flask import Flask, jsonify, request
+from flask import jsonify, request
 
 
 class QuantumBlockChain(BaseBlockChain):

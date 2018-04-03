@@ -14,7 +14,6 @@ $ pip install -r requirements.txt
 ``` 
 
 5. Run the server:
-    * `$ ./blockchain.py` 
     * `$ python2 blockchain.py -p 5001 -d pow.db -v pow:2`
     * `$ python3 blockchain.py --port 5002 --db quant.db --variant quant`
     

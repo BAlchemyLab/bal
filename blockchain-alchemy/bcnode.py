@@ -10,7 +10,6 @@ from subprocess import call
 from multiprocessing import Process
 
 from mininet.util import quietRun
-from mininet.log import info, error, warn, debug
 from mininet.moduledeps import pathCheck
 
 from mininet.cli import CLI
