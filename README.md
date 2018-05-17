@@ -65,5 +65,9 @@ Testing:
 ./bcmn_test.py [host_type]
 ```
 
+```bash
+mn --custom=blockchain-alchemy/QKCustom.py --link=qk --topo=tree,depth=2,fanout=3
+```
+
 ## More information
 you may find in the project's [Wiki](https://github.com/BAlchemyLab/bal/wiki).

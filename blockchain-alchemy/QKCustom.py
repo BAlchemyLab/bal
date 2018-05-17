@@ -1,6 +1,9 @@
 from mininet.link import (Link, TCLink, TCULink, OVSLink)
 from mininet import util
-
+import time
+import subprocess
+import os
+import atexit
 
 class QKLink(Link):
     @classmethod
@@ -17,12 +20,20 @@ class QKLink(Link):
            to change link type)"""
         # Leave this as a class method for now
         assert cls
-        print("\n!!1!!\n")
         return makeIntfPair(intfname1, intfname2, addr1, addr2, node1, node2,
-                            deleteIntfs=deleteIntfs)
+                            deleteIntfs)
 
-def makeIntfPair( intf1, intf2, addr1=None, addr2=None, node1=None, node2=None,
-                  deleteIntfs=True, runCmd=None ):
+    def stop(self):
+        for p in QKLink.processes:
+            p.kill()
+        self.delete()
+
+
+QKLink.processes = []
+
+
+def makeIntfPair(intf1, intf2, addr1=None, addr2=None, node1=None, node2=None,
+                 deleteIntfs=True, runCmd=None):
     """Make a veth pair connnecting new interfaces intf1 and intf2
        intf1: name for interface 1
        intf2: name for interface 2
@@ -38,28 +49,80 @@ def makeIntfPair( intf1, intf2, addr1=None, addr2=None, node1=None, node2=None,
         runCmd2 = util.quietRun if not node2 else node2.cmd
     if deleteIntfs:
         # Delete any old interfaces with the same names
-        runCmd( 'ip link del ' + intf1 )
-        runCmd2( 'ip link del ' + intf2 )
+        runCmd('ip link del ' + intf1)
+        runCmd2('ip link del ' + intf2)
+    """cmdOutput = util.run('ip tuntap add %s mode tap' %
+                         (intf1))
+    if cmdOutput:
+        raise Exception("Error creating interface pair (%s,%s): %s " %
+                        (intf1, intf2, cmdOutput))
+    cmdOutput = util.run('ip tuntap add %s mode tap' %
+                         (intf2))
+    if cmdOutput:
+        raise Exception("Error creating interface pair (%s,%s): %s " %
+                        (intf1, intf2, cmdOutput))"""
     # Create new pair
     netns = 1 if not node2 else node2.pid
-    if addr1 is None and addr2 is None:
-        cmdOutput = runCmd( 'ip link add name %s '
-                            'type veth peer name %s '
-                            'netns %s' % ( intf1, intf2, netns ) )
+    print('\n/root/qnet/src/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
+        makeIntfPair.portscount, makeIntfPair.portscount + 1, intf1))
+    print('\n/root/qnet/src/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
+        makeIntfPair.portscount + 1, makeIntfPair.portscount, intf2))
+    process = subprocess.Popen(
+        ['/root/qnet/src/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount), '-t', '127.0.0.1', '-k',
+         str(makeIntfPair.portscount + 1), '-i', intf1, '-a', '1', '-q', '127.0.0.1', '-r', '55554', '-e',
+         '100'""", '-d', '1'"""], preexec_fn=os.setpgrp)
+    QKLink.processes.append(process)
+    process = subprocess.Popen(
+        ['/root/qnet/src/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount + 1), '-t', '127.0.0.1', '-k',
+         str(makeIntfPair.portscount), '-i', intf2, '-a', '1', '-q', '127.0.0.1', '-r', '55554', '-e',
+         '100'""", '-d', '1'"""], preexec_fn=os.setpgrp)
+    QKLink.processes.append(process)
+    time.sleep(0.5)
+    makeIntfPair.portscount = makeIntfPair.portscount + 2
+    if addr1 is None:
+        cmdOutput = util.run('ip link set %s '
+                             'netns %s' %
+                             (intf1, node1.pid))
     else:
-        cmdOutput = runCmd( 'ip link add name %s '
-                            'address %s '
-                            'type veth peer name %s '
-                            'address %s '
-                            'netns %s' %
-                            (  intf1, addr1, intf2, addr2, netns ) )
-    if cmdOutput:
-        raise Exception( "Error creating interface pair (%s,%s): %s " %
-                         ( intf1, intf2, cmdOutput ) )
+        cmdOutput = util.run('ip link set %s address %s '
+                             'netns %s' %
+                             (intf1, addr1, node1.pid))
 
+    if cmdOutput:
+        for p in QKLink.processes:
+            p.kill()
+        raise Exception("Error creating interface pair (%s,%s): %s " %
+                        (intf1, intf2, cmdOutput))
+    if addr2 is None:
+        cmdOutput = util.run('ip link set %s '
+                             'netns %s' %
+                             (intf2, netns))
+    else:
+        cmdOutput = util.run('ip link set %s address %s '
+                             'netns %s' %
+                             (intf2, addr2, netns))
+
+    if cmdOutput:
+        for p in QKLink.processes:
+            p.kill()
+        raise Exception("Error creating interface pair (%s,%s): %s " %
+                        (intf1, intf2, cmdOutput))
+
+
+makeIntfPair.portscount = 3333
 
 LINKS = {'default': Link,  # Note: overridden below
          'tc': TCLink,
          'tcu': TCULink,
          'ovs': OVSLink,
          'qk': QKLink}
+
+print('/root/qnet/src/keyworker/keyworker -n /root/qnet/src/ctapudp/db1')
+process = subprocess.Popen(
+    ['/root/qnet/src/keyworker/keyworker', '-n', '/root/qnet/src/keyworker/db1','-w','2'""", '-d', '1'"""], preexec_fn=os.setpgrp)
+
+
+def exit_handler():
+    process.kill()
+
+atexit.register(exit_handler)
