@@ -65,8 +65,33 @@ Testing:
 ./bcmn_test.py [host_type]
 ```
 
+
+**Test with quantum links:**
 ```bash
 mn --custom=blockchain-alchemy/QKCustom.py --link=qk --topo=tree,depth=2,fanout=3
+```
+
+**Test with ryu:**
+
+```bash
+sudo mn --custom blockchain-alchemy/topo_2sw-2host.py --topo mytopo --mac --controller remote --switch ovs
+```
+
+Go to blockchain-alchemy directory and start ryu-manager:
+
+```bash
+cd blockchain-alchemy
+sudo ryu-manager rest_forward.py
+```
+
+You can switch channels with RestAPI:
+For raw channel:
+```bash
+curl -X GET http://localhost:8080/channel/1/1
+```
+For quantum channel:
+```bash
+curl -X GET http://localhost:8080/channel/1/2
 ```
 
 ## More information
