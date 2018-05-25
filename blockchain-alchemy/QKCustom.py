@@ -63,17 +63,17 @@ def makeIntfPair(intf1, intf2, addr1=None, addr2=None, node1=None, node2=None,
                         (intf1, intf2, cmdOutput))"""
     # Create new pair
     netns = 1 if not node2 else node2.pid
-    print('\n/root/qnet/src/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
+    print('\n/root/qnet/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
         makeIntfPair.portscount, makeIntfPair.portscount + 1, intf1))
-    print('\n/root/qnet/src/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
+    print('\n/root/qnet/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
         makeIntfPair.portscount + 1, makeIntfPair.portscount, intf2))
     process = subprocess.Popen(
-        ['/root/qnet/src/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount), '-t', '127.0.0.1', '-k',
+        ['/root/qnet/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount), '-t', '127.0.0.1', '-k',
          str(makeIntfPair.portscount + 1), '-i', intf1, '-a', '1', '-q', '127.0.0.1', '-r', '55554', '-e',
          '100'""", '-d', '1'"""], preexec_fn=os.setpgrp)
     QKLink.processes.append(process)
     process = subprocess.Popen(
-        ['/root/qnet/src/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount + 1), '-t', '127.0.0.1', '-k',
+        ['/root/qnet/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount + 1), '-t', '127.0.0.1', '-k',
          str(makeIntfPair.portscount), '-i', intf2, '-a', '1', '-q', '127.0.0.1', '-r', '55554', '-e',
          '100'""", '-d', '1'"""], preexec_fn=os.setpgrp)
     QKLink.processes.append(process)
@@ -117,9 +117,9 @@ LINKS = {'default': Link,  # Note: overridden below
          'ovs': OVSLink,
          'qk': QKLink}
 
-print('/root/qnet/src/keyworker/keyworker -n /root/qnet/src/ctapudp/db1')
+print('/root/qnet/keyworker/keyworker -n /root/qnet/ctapudp/db1')
 process = subprocess.Popen(
-    ['/root/qnet/src/keyworker/keyworker', '-n', '/root/qnet/src/keyworker/db1','-w','2'""", '-d', '1'"""], preexec_fn=os.setpgrp)
+    ['/root/qnet/keyworker/keyworker', '-n', '/root/qnet/keyworker/db1','-w','2'""", '-d', '1'"""], preexec_fn=os.setpgrp)
 
 
 def exit_handler():

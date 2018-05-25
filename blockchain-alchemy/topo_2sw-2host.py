@@ -1,6 +1,7 @@
 from mininet.topo import Topo
 from mininet.link import Link
 from mininet import util
+from mininet.node import OVSSwitch
 import time
 import subprocess
 import os
@@ -66,19 +67,19 @@ def makeIntfPair(intf1, intf2, addr1=None, addr2=None, node1=None, node2=None,
     # Create new pair
     netns = 1 if not node2 else node2.pid
     print(
-                '\n/root/qnet/src/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
+                '\n/root/qnet/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
             makeIntfPair.portscount, makeIntfPair.portscount + 1, intf1))
     print(
-                '\n/root/qnet/src/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
+                '\n/root/qnet/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
             makeIntfPair.portscount + 1, makeIntfPair.portscount, intf2))
     process = subprocess.Popen(
-        ['/root/qnet/src/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount), '-t', '127.0.0.1',
+        ['/root/qnet/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount), '-t', '127.0.0.1',
          '-k',
          str(makeIntfPair.portscount + 1), '-i', intf1, '-a', '1', '-q', '127.0.0.1', '-r', '55554', '-e',
          '100'""", '-d', '1'"""], preexec_fn=os.setpgrp)
     QKLink.processes.append(process)
     process = subprocess.Popen(
-        ['/root/qnet/src/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount + 1), '-t', '127.0.0.1',
+        ['/root/qnet/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount + 1), '-t', '127.0.0.1',
          '-k',
          str(makeIntfPair.portscount), '-i', intf2, '-a', '1', '-q', '127.0.0.1', '-r', '55554', '-e',
          '100'""", '-d', '1'"""], preexec_fn=os.setpgrp)
@@ -130,8 +131,8 @@ class MyTopo(Topo):
         # Add hosts and switches
         leftHost = self.addHost('h1')
         rightHost = self.addHost('h2')
-        leftSwitch = self.addSwitch('s1', dpid='000016ccbbe0d642')
-        rightSwitch = self.addSwitch('s2', dpid='00001ad87e868d45')
+        leftSwitch = self.addSwitch('s1', cls = OVSSwitch, protocols='OpenFlow13', dpid='000016ccbbe0d642')
+        rightSwitch = self.addSwitch('s2', cls = OVSSwitch, protocols='OpenFlow13', dpid='00001ad87e868d45')
 
         # Add links
         self.addLink(leftHost, leftSwitch, cls=QKLink)
@@ -141,7 +142,7 @@ class MyTopo(Topo):
 
 
 process = subprocess.Popen(
-    ['/root/qnet/src/keyworker/keyworker', '-n', '/root/qnet/src/keyworker/db1', '-w', '2'""", '-d', '1'"""],
+    ['/root/qnet/keyworker/keyworker', '-n', '/root/qnet/keyworker/db1', '-w', '2'""", '-d', '1'"""],
     preexec_fn=os.setpgrp)
 
 
