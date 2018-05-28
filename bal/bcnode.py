@@ -14,6 +14,7 @@ from mininet.moduledeps import pathCheck
 
 from mininet.cli import CLI
 from mininet.node import Host, CPULimitedHost
+from mininet.log import info, error, warn, debug
 
 #class BCNode( CPULimitedHost, CLI ):
 class BCNode( CPULimitedHost):

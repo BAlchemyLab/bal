@@ -14,12 +14,12 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'blockchain-alchemy'
+NAME = 'bal'
 DESCRIPTION = ''
 URL = 'https://github.com/BAlchemyLab/bal'
 EMAIL = 'oleg.sadov@gmail.com'
 AUTHOR = 'Oleg Sadov'
-REQUIRES_PYTHON = '>=3.5.2'
+REQUIRES_PYTHON = '>=2.7'
 VERSION = None
 
 # What packages are required for this module to be executed?
@@ -95,6 +95,8 @@ setup(
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
         'License :: OSI Approved :: GNU General Public License v3',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
