@@ -7,7 +7,7 @@ The source code of originally based on post on [Building a Blockchain](https://m
 1. Make sure [Python](https://www.python.org/downloads/) 2 or 3 is installed. 
 
 
-2. Install requirements (preferably inside a [virtual environment] (https://docs.python.org/3/tutorial/venv.html)).  
+2. Install requirements (preferably inside a [virtual environment](https://docs.python.org/3/tutorial/venv.html)).  
 
 ```
 $ pip install -r requirements.txt
@@ -68,19 +68,19 @@ Testing:
 
 **Test with quantum links:**
 ```bash
-mn --custom=blockchain-alchemy/QKCustom.py --link=qk --topo=tree,depth=2,fanout=3
+mn --custom=bal/QKCustom.py --link=qk --topo=tree,depth=2,fanout=3
 ```
 
 **Test with ryu:**
 
 ```bash
-sudo mn --custom blockchain-alchemy/topo_2sw-2host.py --topo mytopo --mac --controller remote --switch ovs
+sudo mn --custom bal/topo_2sw-2host.py --topo mytopo --mac --controller remote --switch ovs
 ```
 
-Go to blockchain-alchemy directory and start ryu-manager:
+Go to 'bal' directory and start ryu-manager:
 
 ```bash
-cd blockchain-alchemy
+cd bal
 sudo ryu-manager rest_forward.py
 ```
 

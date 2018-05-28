@@ -1,9 +1,12 @@
-from mininet.link import (Link, TCLink, TCULink, OVSLink)
+from mininet.topo import Topo
+from mininet.link import Link
 from mininet import util
+from mininet.node import OVSSwitch
 import time
 import subprocess
 import os
 import atexit
+
 
 class QKLink(Link):
     @classmethod
@@ -63,17 +66,21 @@ def makeIntfPair(intf1, intf2, addr1=None, addr2=None, node1=None, node2=None,
                         (intf1, intf2, cmdOutput))"""
     # Create new pair
     netns = 1 if not node2 else node2.pid
-    print('\n/root/qnet/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
-        makeIntfPair.portscount, makeIntfPair.portscount + 1, intf1))
-    print('\n/root/qnet/ctapudp/ctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
-        makeIntfPair.portscount + 1, makeIntfPair.portscount, intf2))
+    print(
+                '\nctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
+            makeIntfPair.portscount, makeIntfPair.portscount + 1, intf1))
+    print(
+                '\nctapudp -s 0.0.0.0 -p %i -t 127.0.0.1 -k %i -i %s -a 1 -q 127.0.0.1 -r 55554 -e 100\n' % (
+            makeIntfPair.portscount + 1, makeIntfPair.portscount, intf2))
     process = subprocess.Popen(
-        ['/root/qnet/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount), '-t', '127.0.0.1', '-k',
+        ['ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount), '-t', '127.0.0.1',
+         '-k',
          str(makeIntfPair.portscount + 1), '-i', intf1, '-a', '1', '-q', '127.0.0.1', '-r', '55554', '-e',
          '100'""", '-d', '1'"""], preexec_fn=os.setpgrp)
     QKLink.processes.append(process)
     process = subprocess.Popen(
-        ['/root/qnet/ctapudp/ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount + 1), '-t', '127.0.0.1', '-k',
+        ['ctapudp', '-s', '127.0.0.1', '-p', str(makeIntfPair.portscount + 1), '-t', '127.0.0.1',
+         '-k',
          str(makeIntfPair.portscount), '-i', intf2, '-a', '1', '-q', '127.0.0.1', '-r', '55554', '-e',
          '100'""", '-d', '1'"""], preexec_fn=os.setpgrp)
     QKLink.processes.append(process)
@@ -111,18 +118,37 @@ def makeIntfPair(intf1, intf2, addr1=None, addr2=None, node1=None, node2=None,
 
 makeIntfPair.portscount = 3333
 
-LINKS = {'default': Link,  # Note: overridden below
-         'tc': TCLink,
-         'tcu': TCULink,
-         'ovs': OVSLink,
-         'qk': QKLink}
 
-print('/root/qnet/keyworker/keyworker -n /root/qnet/ctapudp/db1')
+class QTopo(Topo):
+    "2 switch 2 host connetcted by QKLink custom topology"
+
+    def __init__(self):
+        "Create custom topo."
+
+        # Initialize topology
+        Topo.__init__(self)
+
+        # Add hosts and switches
+        leftHost = self.addHost('h1')
+        rightHost = self.addHost('h2')
+        leftSwitch = self.addSwitch('s1', cls = OVSSwitch, protocols='OpenFlow13', dpid='000016ccbbe0d642')
+        rightSwitch = self.addSwitch('s2', cls = OVSSwitch, protocols='OpenFlow13', dpid='00001ad87e868d45')
+
+        # Add links
+        self.addLink(leftHost, leftSwitch, cls=QKLink)
+        self.addLink(rightHost, rightSwitch, cls=QKLink)
+        self.addLink(leftSwitch, rightSwitch)
+        self.addLink(leftSwitch, rightSwitch, cls=QKLink)
+
+
 process = subprocess.Popen(
-    ['/root/qnet/keyworker/keyworker', '-n', '/root/qnet/keyworker/db1','-w','2'""", '-d', '1'"""], preexec_fn=os.setpgrp)
+    ['keyworker', '-n', '/opt/bal/var/db1', '-w', '2'""", '-d', '1'"""],
+    preexec_fn=os.setpgrp)
 
 
 def exit_handler():
     process.kill()
 
+
 atexit.register(exit_handler)
+topos = {'qtopo': (lambda: QTopo())}

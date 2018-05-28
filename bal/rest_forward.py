@@ -14,8 +14,8 @@ from ryu.lib import dpid as dpid_lib
 from ryu.lib import ofctl_v1_3
 from ryu.ofproto import ofproto_v1_3, ofproto_v1_3_parser
 
-rules_default = 'channels.json'
-rules = 'channels.json'
+rules_default = '/etc/rest_forward/channels.json'
+rules = '/var/lib/rest_forward/channels.json'
 LOG = logging.getLogger(__name__)
 
 
