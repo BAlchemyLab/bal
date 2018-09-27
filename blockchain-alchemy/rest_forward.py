@@ -145,12 +145,12 @@ class ForwardController(ControllerBase):
 
         for l in jsonconf.keys():
             ch = l
-        for k, v in self.channels.items():
-            if k == ch:
-                c = self.channels[ch]
-                mode = 'delete'
-                self.set_data(c, mode)
-        self.channels[ch] = jsonconf[ch]
+            for k, v in self.channels.items():
+                if k == ch:
+                    c = self.channels[ch]
+                    mode = 'delete'
+                    self.set_data(c, mode)
+            self.channels[ch] = jsonconf[ch]
 
         f = open(rules, "w+")
         f.write(json.dumps({"ovs": self.ovs, "channels": self.channels}))
