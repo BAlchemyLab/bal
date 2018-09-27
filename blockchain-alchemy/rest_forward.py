@@ -142,7 +142,7 @@ class ForwardController(ControllerBase):
     @route('channel', '/channel', methods=['POST'])
     def set_channel(self, req, **kwargs):
         jsonconf = json.loads(req.body)
-
+        result = []
         for l in jsonconf.keys():
             ch = l
             for k, v in self.channels.items():
@@ -152,15 +152,16 @@ class ForwardController(ControllerBase):
                     self.set_data(c, mode)
             self.channels[ch] = jsonconf[ch]
 
+            mode = 'add'
+            c = self.channels[ch]
+            self.set_data(c, mode)
+            result.append({'id': ch, 'result': 'Configurations are added.'})
+        body = json.dumps(result)
         f = open(rules, "w+")
         f.write(json.dumps({"ovs": self.ovs, "channels": self.channels}))
         f.close()
-        mode = 'add'
-        c = self.channels[ch]
-        self.set_data(c, mode)
-        body = json.dumps({'id': ch, 'result': 'Configurations are added.'})
         return Response(content_type='application/json', body=body)
-
+    
     @route('ovs', '/ovs', methods=['POST'])
     def set_ovs(self, req, **kwargs):
         jsonconf = json.loads(req.body)
