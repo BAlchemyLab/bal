@@ -23,4 +23,3 @@ TOPOS = { 'minimal': lambda: SingleSwitchTopo( k=2 ),
           'none': None,
           'tree': TreeTopo,
           'qtopo': QTopo }
-

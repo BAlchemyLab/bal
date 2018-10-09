@@ -5,12 +5,13 @@ import requests
 from BaseBlockChain import BaseBlockChain
 import hashlib
 
+DIFFICULTY_ADJUSTMENT_INTERVAL = 16
+BLOCK_GENERATION_INTERVAL = 5
 
 class POWBlockChain(BaseBlockChain):
-    def __init__(self, difficulty=4):
-        super().__init__()
-        self.difficulty = difficulty
-        print('POWBlockChain with difficulty=%d' % self.difficulty)
+    def __init__(self, initial_difficulty=4):
+        super().__init__(initial_difficulty)
+        print('POWBlockChain with initial difficulty=%d' % self.difficulty)
         return
 
     def valid_chain(self, chain):
@@ -72,6 +73,7 @@ class POWBlockChain(BaseBlockChain):
 
         guess = '{}{}{}'.format(last_proof, proof, last_hash).encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
+        self.difficulty = self.get_difficulty(self.chain)
         return guess_hash[:self.difficulty] == "0" * self.difficulty
 
     def full_chain(self):
@@ -114,3 +116,21 @@ class POWBlockChain(BaseBlockChain):
             return True
 
         return False
+
+    def get_difficulty(self, a_block_chain):
+        latest_block = a_block_chain[-1]
+        if latest_block['index'] % DIFFICULTY_ADJUSTMENT_INTERVAL == 0 and latest_block['index'] != 0:
+            return self.get_adjusted_difficulty(latest_block, a_block_chain)
+        else:
+            return latest_block['difficulty'];
+
+    def get_adjusted_difficulty(self, latest_block, a_block_chain):
+        prev_adjustment_block = a_block_chain[-1 * DIFFICULTY_ADJUSTMENT_INTERVAL]
+        time_expected = BLOCK_GENERATION_INTERVAL * DIFFICULTY_ADJUSTMENT_INTERVAL
+        time_taken = latest_block['timestamp'] - prev_adjustment_block['timestamp']
+        if time_taken < time_expected / 2:
+            return prev_adjustment_block['difficulty'] + 1
+        elif time_taken > time_expected * 2:
+            return prev_adjustment_block['difficulty'] - 1
+        else:
+            return prev_adjustment_block['difficulty']

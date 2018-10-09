@@ -69,14 +69,14 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
     parser.add_argument('-d', '--db', default='', help='db file')
-    parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow[:difficulty]" or "quant"')
+    parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow[:initial_difficulty]" or "quant"')
     args = parser.parse_args()
     port = args.port
     dbfile = args.db
     if args.variant.find('pow') == 0:
         pow = args.variant.split(':')
         if len(pow) == 2:
-            blockchain = POWBlockChain(difficulty=int(pow[1]))
+            blockchain = POWBlockChain(initial_difficulty=int(pow[1]))
         else:
             blockchain = POWBlockChain()
     elif args.variant == 'quant':

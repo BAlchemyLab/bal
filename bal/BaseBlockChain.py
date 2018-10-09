@@ -14,13 +14,14 @@ from flask import jsonify
 
 
 class BaseBlockChain(object):
-    def __init__(self):
+    def __init__(self, initial_difficulty):
         self.current_transactions = []
         self.chain = []
         self.nodes = set()
         self.db = None
         # Generate a globally unique address for this node
         self.node_identifier = str(uuid4()).replace('-', '')
+        self.difficulty = initial_difficulty
 
         # Create the genesis block
         self.new_block(previous_hash='1', proof=100)
@@ -84,6 +85,7 @@ class BaseBlockChain(object):
             'transactions': self.current_transactions,
             'proof': proof,
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
+            'difficulty': self.difficulty
         }
 
         # Reset the current list of transactions
@@ -133,6 +135,10 @@ class BaseBlockChain(object):
 
     @abc.abstractmethod
     def full_chain(self):
+        return
+
+    @abc.abstractmethod
+    def get_difficulty(self):
         return
 
     # REST API functions
