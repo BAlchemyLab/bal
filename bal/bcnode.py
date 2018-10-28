@@ -46,6 +46,10 @@ class BCNode( CPULimitedHost):
             pathCheck( self.server )
             cout = '/tmp/bc_' + self.name + '.log'
             if self.sdir is not None:
+                try:
+                    os.stat(self.sdir)
+                except:
+                    os.mkdir(self.sdir)
                 self.cmd( 'cd ' + self.sdir )
             cmd = self.server
             if self.sargs:
@@ -119,7 +123,7 @@ class EthNode(BCNode):
     def start( self ):
         """Start <bcnode> <args> on node.
            Log to /tmp/bc_<name>.log"""
- 
+
         if self.server:
             pathCheck( self.server )
             cout = '/tmp/bc_' + self.name + '.log'

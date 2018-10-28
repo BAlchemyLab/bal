@@ -3,7 +3,7 @@ from mininet.util import specialClass
 from mininet.topo import SingleSwitchTopo, LinearTopo, SingleSwitchReversedTopo
 from mininet.topolib import TreeTopo
 from bal.bcnode import ( EthNode, BtcNode, POWNode, QNode )
-from bal.QTopo import QTopo
+#from bal.QTopo import QTopo
 
 
 HOSTDEF = 'proc'
@@ -21,5 +21,5 @@ TOPOS = { 'minimal': lambda: SingleSwitchTopo( k=2 ),
           'reversed': SingleSwitchReversedTopo,
           'single': SingleSwitchTopo,
           'none': None,
-          'tree': TreeTopo,
-          'qtopo': QTopo }
+          #'qtopo': QTopo 
+          'tree': TreeTopo }
