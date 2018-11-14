@@ -122,7 +122,7 @@ class POWBlockChain(BaseBlockChain):
         if latest_block['index'] % DIFFICULTY_ADJUSTMENT_INTERVAL == 0 and latest_block['index'] != 0:
             return self.get_adjusted_difficulty(latest_block, a_block_chain)
         else:
-            return latest_block['difficulty'];
+            return latest_block['difficulty']
 
     def get_adjusted_difficulty(self, latest_block, a_block_chain):
         prev_adjustment_block = a_block_chain[-1 * DIFFICULTY_ADJUSTMENT_INTERVAL]
