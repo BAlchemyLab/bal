@@ -1,31 +1,33 @@
-from ecdsa import SigningKey, NIST192p
+from ecdsa import SigningKey, SECP256k1
 from Transaction import get_transaction_id, sign_tx_in, Transaction, TxIn, TxOut, UnspentTxOut
 import numbers
 import os
+from functional import seq
 
 PRIVATE_KEY_LOCATION = 'private_key.pem'
 
 def get_private_from_wallet():
-    sk = SigningKey.from_pem(open(PRIVATE_KEY_LOCATION).read())
+    sk = SigningKey.from_pem(open(PRIVATE_KEY_LOCATION).read().encode())
     return sk
 
 def get_public_from_wallet():
     private_key = get_private_from_wallet()
-    key = SigningKey.from_string(private_key, curve=NIST192p)
-    return key.get_verifying_key().to_pem()
+    return private_key.get_verifying_key().to_der().hex()
 
 def generate_private_key():
-    private_key = SigningKey.generate(curve=NIST192p)
-    return private_key.to_pem()
+    private_key = SigningKey.generate(curve=SECP256k1)
+    return private_key
 
 def init_wallet():
     if os.path.exists(PRIVATE_KEY_LOCATION):
         return
 
-    new_private_key = generate_private_key()
-    f = open(PRIVATE_KEY_LOCATION, "x")
-    f.write(new_private_key)
-    f.close()
+    new_private_key = generate_private_key().to_pem().decode()
+    try:
+        with open(PRIVATE_KEY_LOCATION, "x") as f:
+            f.write(new_private_key)
+    except:
+        return
     print('new wallet with private key created to : %s', PRIVATE_KEY_LOCATION)
 
 def delete_wallet():
@@ -41,7 +43,7 @@ def get_balance(address, unspent_tx_outs):
             .sum()
 
 def find_unspent_tx_outs(owner_address, unspent_tx_outs):
-    return filter(lambda u_tx_o : u_tx_o.address == owner_address, unspent_tx_outs)
+    return [u_tx_o for u_tx_o in unspent_tx_outs if u_tx_o.address == owner_address]
 
 def find_tx_outs_for_amount(amount, my_unspent_tx_outs):
     current_amount = 0
@@ -79,8 +81,7 @@ def filter_tx_pool_txs(unspent_tx_outs, transaction_pool):
 
 def create_transaction(receiver_address, amount, private_key, unspent_tx_outs, tx_pool):
     print('txPool: %s', json.dump(txPool))
-    key = SigningKey.from_string(private_key, curve=NIST192p)
-    myAddress = key.get_verifying_key().to_string()
+    my_address = private_key.get_verifying_key().to_der().hex()
     my_unspent_tx_outs_a = find_unspent_tx_outs(my_address, unspent_tx_outs)
 
     my_unspent_tx_outs = filter_tx_pool_txs(my_unspent_tx_outs_a, tx_pool)

@@ -10,7 +10,7 @@ from POSBlockChain import POSBlockChain
 from Transaction import Transaction
 from TransactionPool import get_transaction_pool
 from p2p import broadcast_latest, broadcast_transaction_pool
-from Wallet import init_wallet
+from Wallet import init_wallet, get_public_from_wallet
 
 app = Flask(__name__)
 
@@ -18,13 +18,19 @@ app = Flask(__name__)
 # Instantiate the Blockchain
 blockchain = None
 
-@app.route('/transcations/unspenttxouts', methods=['GET'])
+@app.route('/transactions/unspenttxouts', methods=['GET'])
 def get_unspent_tx_outputs():
-    return jsonify(blockchain.unspent_tx_outs), 200
+    result = [tx_o.to_json() for tx_o in blockchain.unspent_tx_outs]
+    return jsonify(result), 200
 
-@app.route('/transcations/unspenttxouts/my', methods=['GET'])
+@app.route('/transactions/unspenttxouts/my', methods=['GET'])
 def my_unspent_tx_outs():
     return jsonify(blockchain.get_my_unspent_transaction_outputs()), 200
+
+@app.route('/address', methods=['GET'])
+def r_address():
+    address = get_public_from_wallet()
+    return jsonify({'address': address}), 200
 
 @app.route('/balance', methods=['GET'])
 def r_get_balance():

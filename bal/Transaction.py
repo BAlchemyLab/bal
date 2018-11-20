@@ -3,8 +3,9 @@ from ecdsa import SigningKey, NIST192p
 import numbers
 import re
 import json
-import pdb
 import hashlib
+from itertools import chain
+from functools import reduce
 COINBASE_AMOUNT = 50
 
 class UnspentTxOut:
@@ -14,16 +15,25 @@ class UnspentTxOut:
         self.address = address
         self.amount = amount
 
+    def to_json(self):
+        return self.__dict__
+
 class TxIn:
     def __init__(self, tx_out_id, tx_out_index, signature) :
         self.tx_out_id = tx_out_id
         self.tx_out_index = tx_out_index
         self.signature = signature
 
+    def to_json(self):
+        return self.__dict__
+
 class TxOut:
     def __init__(self, address, amount):
         self.address = address
         self.amount = amount
+
+    def to_json(self):
+        return self.__dict__
 
 class Transaction:
     def __init__(self, id, tx_ins, tx_outs):
@@ -31,6 +41,9 @@ class Transaction:
         self.tx_ins = tx_ins
         self.tx_outs = tx_outs
 
+    def to_json(self):
+        return self.__dict__
+        
 def get_transaction_id(transaction):
     tx_in_content = ''.join(map(lambda tx_in : tx_in.tx_out_id + str(tx_in.tx_out_index), transaction.tx_ins))
     tx_out_content = ''.join(map(lambda tx_out : tx_out.address + str(tx_out.amount), transaction.tx_outs))
@@ -107,7 +120,7 @@ def validate_tx_in(tx_in, transaction, a_unspent_tx_outs):
 
     address = referenced_u_tx_out.address
 
-    key = VerifyingKey.from_string(address, curve=NIST192p)
+    key = VerifyingKey.from_der(bytes.from_hex(address))
     valid_signature = key.verify(tx_in.signature, transaction.id)
     if not valid_signature:
         print('invalid txIn signature: %s txId: %s address: %s', tx_in.signature, transaction.id, referenced_u_tx_out.address)
@@ -134,8 +147,8 @@ def sign_tx_in(transaction, tx_in_index, private_key, unspent_tx_outs):
         print('could not find referenced txOut')
         raise
 
-    signing_key = SigningKey.from_string(private_key, curve=NIST192p)
-    if signing_key.get_verifying_key().to_string() != referencedAddress:
+    signing_key = SigningKey.from_der(bytes.from_hex(private_key))
+    if signing_key.get_verifying_key().to_der().hex() != referencedAddress:
         print('trying to sign an input with private' +
             ' key that does not match the address that is referenced in txIn')
         raise
@@ -145,10 +158,10 @@ def sign_tx_in(transaction, tx_in_index, private_key, unspent_tx_outs):
     return signature
 
 def update_unspent_tx_outs(a_transactions, a_unspent_tx_outs):
-    new_unspent_tx_outs = get_new_unspent_tx_outs(a_transactions) or []
+    new_unspent_tx_outs = get_new_unspent_tx_outs(a_transactions)
     consumed_tx_outs = get_consumed_tx_outs(a_transactions)
 
-    resulting_unspent_tx_outs = get_resulting_unspent_tx_outs(a_unspent_tx_outs, consumed_tx_outs) or []
+    resulting_unspent_tx_outs = get_resulting_unspent_tx_outs(a_unspent_tx_outs, consumed_tx_outs)
     return resulting_unspent_tx_outs + new_unspent_tx_outs
 
 def process_transactions(a_transactions, a_unspent_tx_outs, block_index):
@@ -222,42 +235,40 @@ def is_valid_address(address):
     elif not re.compile('^[a-fA-F0-9]+$').match(address):
         print('public key must contain only hex characters')
         return False
-    elif not address.startswith('04'):
-        print('public key must start with 04')
-        return False
     return True
 
 def get_new_unspent_tx_outs(new_transactions):
-    seq(new_transactions)\
-        .map(lambda t : map(lambda tx_out, index : get_new_unspent_tx_out_helper(tx_out, index), enumerate(t.tx_outs)))\
-        .reduce(lambda a, b : a.concat(b))
+    result = []
+    for transaction in new_transactions:
+        tx_outs = transaction.tx_outs
+        tx_objs = [UnspentTxOut(transaction.id, index, tx_out.address, tx_out.amount) for index, tx_out in enumerate(tx_outs)]
+        result.extend(tx_objs)
+
+    return result
 
 def get_consumed_tx_outs(new_transactions):
-    seq(new_transactions)\
-        .map(lambda t : t.tx_ins)\
-        .reduce(lambda a, b : a.concat(b))\
-        .map(lambda tx_in : UnspentTxOut(tx_in.tx_out_id, tx_in.tx_out_index, '',0))
+    return seq(new_transactions)\
+            .map(lambda t : t.tx_ins)\
+            .reduce(lambda a, b : a.concat(b))\
+            .map(lambda tx_in : UnspentTxOut(tx_in.tx_out_id, tx_in.tx_out_index, '',0))
 
 def get_resulting_unspent_tx_outs(unspent_tx_outs, consumed_tx_outs):
-    filter(lambda tx : not find_unspent_tx_out(tx.tx_out_id, tx.tx_out_index, consumed_tx_outs), unspent_tx_outs)
-
-def get_new_unspent_tx_out_helper(tx_out, index):
-    return UnspentTxOut(tx_out.tx_out_id, index, tx_out.address, tx_out.amount)
+    return [tx for tx in unspent_tx_outs if not find_unspent_tx_out(tx.tx_out_id, tx.tx_out_index, consumed_tx_outs)]
 
 def has_valid_tx_ins(transaction):
-    seq(transaction.tx_ins)\
-        .map(lambda tx_in : validate_tx_in(tx_in, transaction, a_unspent_tx_outs))\
-        .reduce(lambda a, b : a and b, True)
+    return seq(transaction.tx_ins)\
+            .map(lambda tx_in : validate_tx_in(tx_in, transaction, a_unspent_tx_outs))\
+            .reduce(lambda a, b : a and b, True)
 
 def total_tx_in_values(transaction, a_unspent_tx_outs):
-    seq(transaction.tx_ins)\
-        .map(lambda tx_in : get_tx_in_amount(tx_in, a_unspent_tx_outs))\
-        .reduce(lambda a, b : (a + b), 0)
+    return seq(transaction.tx_ins)\
+            .map(lambda tx_in : get_tx_in_amount(tx_in, a_unspent_tx_outs))\
+            .reduce(lambda a, b : (a + b), 0)
 
 def total_tx_out_values(transaction):
-    seq(transaction.tx_outs)\
-        .map(lambda tx_out : tx_out.amount)\
-        .reduce(lambda a, b : (a + b), 0)
+    return seq(transaction.tx_outs)\
+            .map(lambda tx_out : tx_out.amount)\
+            .reduce(lambda a, b : (a + b), 0)
 
 def find_unspent_tx_out(transaction_id, index, a_unspent_tx_outs):
     return next((x for u_tx_o in a_unspent_tx_outs if u_tx_o.tx_out_id == transaction_id and u_tx_o.tx_out_index == index), None)
