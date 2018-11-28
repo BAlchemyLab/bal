@@ -7,8 +7,8 @@ from QuantumBlockChain import QuantumBlockChain
 from POWBlockChain import POWBlockChain
 from POSBlockChain import POSBlockChain
 
-from Transaction import Transaction
-from TransactionPool import get_transaction_pool
+from Transaction import new_transaction
+from TransactionPool import TransactionPool
 from p2p import broadcast_latest, broadcast_transaction_pool
 from Wallet import init_wallet, get_public_from_wallet
 
@@ -17,17 +17,17 @@ app = Flask(__name__)
 
 # Instantiate the Blockchain
 blockchain = None
+transaction_pool = None
 
 @app.route('/transactions/unspenttxouts', methods=['GET'])
 def get_unspent_tx_outputs():
-    result = [tx_o.to_json() for tx_o in blockchain.unspent_tx_outs]
-    return jsonify(result), 200
+    return jsonify(blockchain.unspent_tx_outs), 200
 
 @app.route('/transactions/unspenttxouts/my', methods=['GET'])
 def my_unspent_tx_outs():
     return jsonify(blockchain.get_my_unspent_transaction_outputs()), 200
 
-@app.route('/address', methods=['GET'])
+@app.route('/address/my', methods=['GET'])
 def r_address():
     address = get_public_from_wallet()
     return jsonify({'address': address}), 200
@@ -37,9 +37,17 @@ def r_get_balance():
     balance = blockchain.get_account_balance()
     return jsonify({'balance': balance}), 200
 
-@app.route('/transactionPool', methods=['GET'])
+@app.route('/transactions/pool', methods=['GET'])
 def r_get_transaction_pool():
-    return jsonify(get_transaction_pool()), 200
+    return jsonify(transaction_pool.get_transaction_pool()), 200
+
+@app.route('/block/generate', methods=['GET'])
+def r_generate_block():
+    new_block = blockchain.generate_next_block()
+    if new_block:
+        return jsonify(new_block), 200
+    else:
+        return 'Could not generate new block', 400
 
 @app.route('/mine', methods=['GET'])
 def do_mine():
@@ -53,22 +61,22 @@ def new_block():
                                 values['difficulty'],
                                 values['staker_balance'], values['staker_address'])
 
-@app.route('/transactions/new', methods=['POST'])
+@app.route('/transactions/send', methods=['POST'])
 def do_new_transaction():
     values = request.get_json()
 
     # Check that the required fields are in the POST'ed data
-    required = ['sender', 'recipient', 'amount']
+    required = ['recipient', 'amount']
     if not all(k in values for k in required):
         return 'Missing values', 400
 
-    # Create a new Transaction
-    index = blockchain.new_transaction(values['sender'],
-                                       values['recipient'],
-                                       values['amount'])
+    # Create a new new_transaction
+    try:
+        tx = blockchain.send_transaction(values['recipient'], values['amount'])
+    except Exception as e:
+        tx = str(e)
 
-    response = {'message': 'Transaction will be added to Block {}'.format(index)}
-    return jsonify(response), 201
+    return jsonify(tx), 201
 
 
 @app.route('/chain', methods=['GET'])
@@ -84,7 +92,7 @@ def do_remove_nodes():
     blockchain.remove_nodes()
     response = {
         'message': 'Nodes removed',
-        'total_nodes': list(blockchain.nodes),
+        'total_nodes': list(blockchain.get_nodes()),
     }
     return jsonify(response)
 
@@ -98,8 +106,9 @@ def do_register_nodes():
 def do_consensus():
     return blockchain.consensus()
 
+# TODO: Broadcast Class
 @app.route('/broadcast/blockchain', methods=['POST'])
-def get_broadcast_latest():
+def receive_broadcast_latest():
     values = request.get_json()
     if not values:
         print('invalid blocks received: %s', json.dumps(values))
@@ -108,7 +117,7 @@ def get_broadcast_latest():
     handle_blockchain_response(received_blocks)
 
 @app.route('/broadcast/transaction_pool', methods=['POST'])
-def get_broadcast_transaction_pool():
+def receive_broadcast_transaction_pool():
     received_transactions = request.get_json()
     if not received_transactions:
         print('invalid transaction received: %s', json.dumps(value))
@@ -116,24 +125,17 @@ def get_broadcast_transaction_pool():
 
     for transaction in received_transactions:
         try:
-            blockchain.handle_received_transaction(transaction)
-            broadcast_transaction_pool()
+            self.handle_received_transaction(transaction)
+            broadcast_transaction_pool(transaction_pool.get_transaction_pool(), blockchain.get_nodes())
         except:
             print(e.message)
 
 @app.route('/broadcast/blockchain', methods=['GET'])
-def get_all_blockchain_broadcast():
+def response_all_blockchain_broadcast():
     return jsonify(blockchain.full_chain()), 200
 
-def broadcast(type, data):
-    for node in blockchain.nodes:
-        if data:
-            response = requests.post('http://{}/broadcast/{}'.format(node, type), data)
-        else:
-            response = requests.get('http://{}/broadcast/{}'.format(node, type))
-
 def handle_blockchain_response(received_blocks):
-    if len(receivedBlocks == 0):
+    if len(received_blocks == 0):
         print('received block chain size of 0')
         return
 
@@ -152,7 +154,7 @@ def handle_blockchain_response(received_blocks):
                 broadcast('blockchain')
         else:
             print('Received blockchain is longer than current blockchain')
-            block_chain.replace_chain(received_blocks)
+            blockchain.replace_chain(received_blocks)
     else:
         print('received blockchain is not longer than received blockchain. Do nothing')
 
@@ -163,6 +165,8 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
     parser.add_argument('-d', '--db', default='', help='db file')
     parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow[:initial_difficulty]" or "quant"')
+    parser.add_argument('-k', '--keystore', default='private_key.pem', help='where the keystore located. default: private_key.pem')
+
     args = parser.parse_args()
     port = args.port
     dbfile = args.db
@@ -175,8 +179,9 @@ if __name__ == '__main__':
     elif args.variant == 'quant':
         blockchain = QuantumBlockChain(app)
     elif args.variant == 'pos':
-        blockchain = POSBlockChain()
-        init_wallet()
+        transaction_pool = TransactionPool()
+        blockchain = POSBlockChain(transaction_pool)
+        init_wallet(args.keystore)
     else:
         blockchain = POWBlockChain()
     if args.db:

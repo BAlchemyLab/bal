@@ -19,31 +19,30 @@ import requests
 import copy
 from functional import seq
 import numbers
-from attrdict import AttrDict
 
 import hashlib
 
 from p2p import broadcast_latest, broadcast_transaction_pool
-from Transaction import new_coinbase_transaction, is_valid_address, process_transactions, Transaction, UnspentTxOut
-from TransactionPool import add_to_transaction_pool, get_transaction_pool, update_transaction_pool
+from Transaction import new_coinbase_transaction, is_valid_address, process_transactions, new_transaction
+import TransactionPool
 from Wallet import create_transaction, find_unspent_tx_outs, get_balance, get_private_from_wallet, get_public_from_wallet
 
-VALIDATING_WITHOUT_COIN = 100
+VALIDATING_WITHOUT_COIN = 10
 DIFFICULTY_ADJUSTMENT_INTERVAL = 16 # block number
 BLOCK_GENERATION_INTERVAL = 5 # in seconds
 VALID_TIMESTAMP_INTERVAL = 60 # in seconds
 
 class POSBlockChain:
-    def __init__(self, initial_difficulty=4):
+    def __init__(self, transaction_pool):
+        self.transaction_pool = transaction_pool
         self.current_transactions = []
         # Create the genesis block
-        self.chain = [self.genesis_block()]
         self.nodes = set()
         self.db = None
-        self.unspent_tx_outs = process_transactions(self.chain[0]['transactions'], [], 0) or []
         # Generate a globally unique address for this node
         self.node_identifier = str(uuid4()).replace('-', '')
-        self.difficulty = initial_difficulty
+        self.chain = [self.genesis_block()]
+        self.unspent_tx_outs = process_transactions(self.chain[0]['transactions'], [], 0) or []
 
     @property
     def unspent_tx_outs(self):
@@ -63,20 +62,17 @@ class POSBlockChain:
         return self.unspent_tx_outs
 
     def genesis_transaction(self):
-        genesis_t = AttrDict({
+        return {
                     'tx_ins': [{'signature': '', 'tx_out_id': '', 'tx_out_index': 0}],
                     'tx_outs': [{
                         'address': '04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a',
                         'amount': 50
                     }],
                     'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
-                })
-        genesis_t._setattr('_sequence_type', list)
-        return genesis_t
-
+                }
 
     def genesis_block(self):
-        return self.new_block(0, 1465154705, '', [self.genesis_transaction()], 0, 0, '04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a')
+        return self.raw_block(0, 1465154705, '', [self.genesis_transaction()], 0, 0, '0001')
 
     def get_difficulty(self, a_block_chain):
         latest_block = a_block_chain[-1]
@@ -96,19 +92,19 @@ class POSBlockChain:
         else:
             return prev_adjustment_block['difficulty']
 
-    def is_valid_timestamp(block, previous_block):
+    def is_valid_timestamp(self, block, previous_block):
         result = (previous_block['timestamp'] - VALID_TIMESTAMP_INTERVAL < block['timestamp']) and \
                     block['timestamp'] - VALID_TIMESTAMP_INTERVAL < time()
         return result
 
-    def new_block(self, index, timestamp, previous_hash, transactions, difficulty, staker_balance, staker_address):
+    def raw_block(self, index, timestamp, previous_hash, transactions, difficulty, staker_balance, staker_address):
         """
         Create a new Block in the Blockchain
         :param previous_hash: Hash of previous Block
         :return: New Block
         """
 
-        block = AttrDict({
+        block = {
             'index': index,
             'timestamp': timestamp,
             'previous_hash': previous_hash,
@@ -116,18 +112,17 @@ class POSBlockChain:
             'difficulty': difficulty,
             'staker_balance': staker_balance,
             'staker_address': staker_address
-        })
-        block._setattr('_sequence_type', list)
+        }
         block['hash'] = self.hash(block)
         return block
 
     def generate_raw_next_block(self, transactions):
-        previous_block = get_latest_block()
-        difficulty = get_difficulty(self.chain)
+        previous_block = self.get_latest_block()
+        difficulty = self.get_difficulty(self.get_blockchain())
         next_index = previous_block['index'] + 1
-        new_block = find_block(next_index, previous_block['hash'], transactions, difficulty)
-        if add_block_to_chain(new_block):
-            broadcast_latest()
+        new_block = self.find_block(next_index, previous_block['hash'], transactions, difficulty)
+        if self.add_block_to_chain(new_block):
+            #broadcast_latest()
             return new_block
         else:
             return None
@@ -136,10 +131,9 @@ class POSBlockChain:
         return find_unspent_tx_outs(get_public_from_wallet(), self.get_unspent_tx_outs())
 
     def generate_next_block(self):
-        coinbase_tx = new_coinbase_transaction(get_public_from_wallet(), get_latest_block()['index'] + 1)
-        block_data = [coinbase_tx].merge(get_transaction_pool())
-        return generate_raw_next_block(block_data)
-
+        coinbase_tx = new_coinbase_transaction(get_public_from_wallet(), self.get_latest_block()['index'] + 1)
+        transactions = [coinbase_tx] + self.transaction_pool.get_transaction_pool()
+        return self.generate_raw_next_block(transactions)
 
     def generate_next_block_with_transaction(self, receiver_address, amount):
         if not is_valid_address(receiver_address):
@@ -149,15 +143,17 @@ class POSBlockChain:
             raise('invalid amount')
 
         coinbase_tx = new_coinbase_transaction(get_public_from_wallet(), latest_block()['index'] + 1)
-        tx = create_transaction(receiver_address, amount, get_private_from_wallet(), self.get_unspent_tx_outs(), get_transaction_pool())
+        tx = create_transaction(receiver_address, amount, get_private_from_wallet(), self.get_unspent_tx_outs(), self.transaction_pool.get_transaction_pool())
         block_data = [coinbase_tx, tx]
-        return generate_raw_next_block(block_data)
+        return self.generate_raw_next_block(block_data)
 
     def is_block_staking_valid(self, block):
         difficulty = block['difficulty'] + 1
 
         if block['index'] <= VALIDATING_WITHOUT_COIN:
             balance = block['staker_balance'] + 1
+        else:
+            balance = block['staker_balance']
 
         balance_over_difficulty = (2**256) * balance/difficulty
         previous_hash = block['previous_hash']
@@ -176,8 +172,8 @@ class POSBlockChain:
         while (True):
             timestamp = time()
             if previous_time_stamp != timestamp:
-                temp_block = new_block(index, timestamp, previous_hash, transactions, difficulty, get_balance(), get_public_address())
-                if is_block_staking_valid(temp_block):
+                temp_block = self.raw_block(index, timestamp, previous_hash, transactions, difficulty, self.get_account_balance(), get_public_from_wallet())
+                if self.is_block_staking_valid(temp_block):
                     return temp_block
                 previous_time_stamp = timestamp
 
@@ -185,46 +181,44 @@ class POSBlockChain:
         return get_balance(get_public_from_wallet(), self.get_unspent_tx_outs())
 
     def send_transaction(self, address, amount):
-        tx = create_transaction(address, amount, get_private_from_wallet(), self.get_unspent_tx_outs(), get_transaction_pool())
-        add_to_transaction_pool(tx, self.get_unspent_tx_outs())
-        broadcast_transaction_pool()
+        tx = create_transaction(address, amount, get_private_from_wallet(), self.get_unspent_tx_outs(), self.transaction_pool.get_transaction_pool())
+        self.transaction_pool.add_to_transaction_pool(tx, self.get_unspent_tx_outs())
+        #broadcast_transaction_pool()
         return tx
 
-    def is_valid_block_structure(block):
+    def is_valid_block_structure(self, block):
         return isinstance(block['index'], numbers.Number) and \
                  type(block['hash']) == str and \
-                 type(block['previousHash']) == str and \
+                 type(block['previous_hash']) == str and \
                  isinstance(block['timestamp'], numbers.Number) and \
-                 type(block['transactions']) == dict and \
+                 type(block['transactions']) == list and \
                  isinstance(block['difficulty'], numbers.Number) and \
-                 isinstance(block['minterBalance'], number.Number) and \
-                 type(block['minterAddress']) == str
+                 isinstance(block['staker_balance'], numbers.Number) and \
+                 type(block['staker_address']) == str
 
-    def has_valid_hash(block):
-        if not hash(block) == block['hash']:
+    def has_valid_hash(self, block):
+        block_content = {x: block[x] for x in block if x != 'hash'}
+        if not self.hash(block_content) == block['hash']:
             print('invalid hash, got:' + block.hash)
             return False
-        if not is_block_staking_valid(block['previous_hash'], block['staker_address'], block['staker_balance'], block['timestamp'], block['difficulty'], block['index']):
+        if not self.is_block_staking_valid(block):
             print('staking hash not lower than balance over diffculty times 2^256')
             return False
         return True
 
-    def add_block_to_chain(new_block):
-        if is_valid_new_block(new_block, get_latest_block()):
+    def add_block_to_chain(self, new_block):
+        if self.is_valid_block(new_block, self.get_latest_block()):
             ret_val = process_transactions(new_block['transactions'], self.get_unspent_tx_outs(), new_block['index'])
 
-        if (ret_val == null):
-            return False
-        else:
             self.chain.append(new_block)
             self.unspent_tx_outs = ret_val
-            update_transaction_pool(unspent_tx_outs)
+            self.transaction_pool.update_transaction_pool(self.get_unspent_tx_outs())
             return True
-
-        return False
+        else:
+            return False
 
     def handle_received_transaction(self, transaction):
-        add_to_transaction_pool(transaction, self.get_unspent_tx_outs())
+        self.transaction_pool.add_to_transaction_pool(transaction, self.get_unspent_tx_outs())
 
     @staticmethod
     def hash(block):
@@ -268,28 +262,27 @@ class POSBlockChain:
         for block_index in range(1, len(chain)):
             block = chain[block_index]
             last_block = chain[block_index - 1]
-            if not self.valid_block(block, last_block):
+            if not self.is_valid_block(block, last_block):
                 return False
 
         return True
 
-    def valid_block(self, block, previous_block):
+    def is_valid_block(self, block, previous_block):
 
         """
         :param last_hash: <str> The hash of the Previous Block
         :return: <bool> True if correct, False if not.
         """
-        if not is_valid_block_structure(block):
-            print('invalid block structure: %s', json.dumps(block))
+        if not self.is_valid_block_structure(block):
+            print('invalid block structure', json.dumps(block))
             return False
-
         if  previous_block['index'] + 1 != block['index']:
             return False
-        elif previous_block != block['previous_hash']:
+        elif previous_block['hash'] != block['previous_hash']:
             return False
-        elif not is_valid_timestamp(block, previous_block):
+        elif not self.is_valid_timestamp(block, previous_block):
             return False
-        elif self.hash(block) != block['hash']:
+        elif not self.has_valid_hash(block):
             return False
         return True
 
@@ -308,8 +301,8 @@ class POSBlockChain:
             for block in chain:
                 a_unspent_tx_outs = process_transactions(block['transactions'], a_unspent_tx_outs, block['index'])
                 self.unspent_tx_outs = a_unspent_tx_outs
-                update_transaction_pool(unspent_tx_outs)
-            broadcast_latest()
+                self.transaction_pool.update_transaction_pool(unspent_tx_outs)
+            #broadcast_latest()
         else:
             print('Received blockchain invalid')
             return False
