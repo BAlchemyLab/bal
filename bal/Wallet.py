@@ -27,7 +27,7 @@ def init_wallet(keystore_path):
 
     new_private_key = generate_private_key().to_pem().decode()
     try:
-        with open(PRIVATE_KEY_LOCATION, "x") as f:
+        with open(PRIVATE_KEY_LOCATION, "w") as f:
             f.write(new_private_key)
     except:
         return
