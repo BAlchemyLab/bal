@@ -14,7 +14,7 @@ HOSTS = { 'proc': Host,
           'pow': POWNode,
           'btc': BtcNode,
           'eth': EthNode,
-          'post': POSNode}
+          'pos': POSNode}
 
 TOPODEF = 'none'
 TOPOS = { 'minimal': lambda: SingleSwitchTopo( k=2 ),
