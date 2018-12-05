@@ -110,7 +110,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--socket', default=6001, type=int, help='p2p port to listen on')
     parser.add_argument('-d', '--db', default='', help='db file')
     parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow[:initial_difficulty]" or "quant"')
-    parser.add_argument('-k', '--keystore', default='private_key.pem', help='where the keystore located. default: private_key.pem')
+    parser.add_argument('-k', '--keystore', default='/tmp/private_key.pem', help='where the keystore located. default: private_key.pem')
 
     args = parser.parse_args()
     port = args.port
