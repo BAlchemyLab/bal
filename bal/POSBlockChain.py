@@ -22,9 +22,9 @@ import numbers
 
 import hashlib
 
-from p2p import broadcast_latest, broadcast_transaction_pool
+from p2p import P2P
 from Transaction import new_coinbase_transaction, is_valid_address, process_transactions, new_transaction
-import TransactionPool
+from TransactionPool import TransactionPool
 from Wallet import create_transaction, find_unspent_tx_outs, get_balance, get_private_from_wallet, get_public_from_wallet
 
 VALIDATING_WITHOUT_COIN = 10
@@ -33,12 +33,12 @@ BLOCK_GENERATION_INTERVAL = 5 # in seconds
 VALID_TIMESTAMP_INTERVAL = 60 # in seconds
 
 class POSBlockChain:
-    def __init__(self, transaction_pool):
-        self.transaction_pool = transaction_pool
+    def __init__(self, p2p_port):
+        self.transaction_pool = TransactionPool()
         self.current_transactions = []
         # Create the genesis block
-        self.nodes = set()
         self.db = None
+        self.p2p = P2P(self, p2p_port)
         # Generate a globally unique address for this node
         self.node_identifier = str(uuid4()).replace('-', '')
         self.chain = [self.genesis_block()]
@@ -122,7 +122,7 @@ class POSBlockChain:
         next_index = previous_block['index'] + 1
         new_block = self.find_block(next_index, previous_block['hash'], transactions, difficulty)
         if self.add_block_to_chain(new_block):
-            #broadcast_latest()
+            self.p2p.broadcast_latest()
             return new_block
         else:
             return None
@@ -172,18 +172,21 @@ class POSBlockChain:
         while (True):
             timestamp = time()
             if previous_time_stamp != timestamp:
-                temp_block = self.raw_block(index, timestamp, previous_hash, transactions, difficulty, self.get_account_balance(), get_public_from_wallet())
+                temp_block = self.raw_block(index, timestamp, previous_hash, transactions, difficulty, self.get_my_account_balance(), get_public_from_wallet())
                 if self.is_block_staking_valid(temp_block):
                     return temp_block
                 previous_time_stamp = timestamp
 
-    def get_account_balance(self):
-        return get_balance(get_public_from_wallet(), self.get_unspent_tx_outs())
+    def get_my_account_balance(self):
+        return self.get_account_balance(get_public_from_wallet())
+
+    def get_account_balance(self, address):
+        return get_balance(address, self.get_unspent_tx_outs())
 
     def send_transaction(self, address, amount):
         tx = create_transaction(address, amount, get_private_from_wallet(), self.get_unspent_tx_outs(), self.transaction_pool.get_transaction_pool())
         self.transaction_pool.add_to_transaction_pool(tx, self.get_unspent_tx_outs())
-        #broadcast_transaction_pool()
+        self.p2p.broadcast_transaction_pool()
         return tx
 
     def is_valid_block_structure(self, block):
@@ -256,7 +259,7 @@ class POSBlockChain:
         """
         genesis = chain[0]
 
-        if genesis != genesis_block():
+        if genesis != self.genesis_block():
             return False
 
         for block_index in range(1, len(chain)):
@@ -295,56 +298,23 @@ class POSBlockChain:
         return response
 
     def replace_chain(self, chain):
-        if self.valid_chain(chain) and get_accumulated_difficulty(chain) > get_accumulated_difficulty(self.chain):
+        if self.valid_chain(chain) and self.get_accumulated_difficulty(chain) > self.get_accumulated_difficulty(self.chain):
             self.chain = chain
             a_unspent_tx_outs = []
             for block in chain:
                 a_unspent_tx_outs = process_transactions(block['transactions'], a_unspent_tx_outs, block['index'])
                 self.unspent_tx_outs = a_unspent_tx_outs
-                self.transaction_pool.update_transaction_pool(unspent_tx_outs)
-            #broadcast_latest()
+                self.transaction_pool.update_transaction_pool(self.unspent_tx_outs)
+            self.p2p.broadcast_latest()
         else:
             print('Received blockchain invalid')
             return False
 
-    def get_accumulated_difficulty(a_blockchain):
+    def get_accumulated_difficulty(self, a_blockchain):
         return seq(a_blockchain)\
                 .map(lambda block : block['difficulty'])\
-                .map(lambda difficulty : Math.pow(2, difficulty))\
+                .map(lambda difficulty : 2  ** difficulty)\
                 .reduce(lambda a, b : a + b)
-
-    def resolve_conflicts(self):
-        """
-        This is our consensus algorithm, it resolves conflicts
-        by replacing our chain with the longest one in the network.
-        :return: True if our chain was replaced, False if not
-        """
-
-        neighbours = self.nodes
-        new_chain = None
-
-        # We're only looking for chains longer than ours
-        max_length = len(self.chain)
-
-        # Grab and verify the chains from all the nodes in our network
-        for node in neighbours:
-            response = requests.get('http://{}/chain'.format(node))
-
-            if response.status_code == 200:
-                length = response.json()['length']
-                chain = response.json()
-
-                # Check if the length is longer and the chain is valid
-                if length > max_length and self.valid_chain(chain):
-                    max_length = length
-                    new_chain = chain["chain"]
-
-        # Replace our chain if we discovered a new, valid chain longer than ours
-        if new_chain:
-            self.chain = new_chain
-            return True
-
-        return False
 
     def save_db(self):
         if self.db is not None:
@@ -364,45 +334,3 @@ class POSBlockChain:
         except:
             db.close()
             self.save_db()
-
-    def register_node(self, address):
-        """
-        Add a new node to the list of nodes
-        :param address: Address of node. Eg. 'http://192.168.0.5:5000'
-        """
-
-        parsed_url = urlparse(address)
-        if parsed_url.netloc:
-            self.nodes.add(parsed_url.netloc)
-        elif parsed_url.path:
-            # Accepts an URL without scheme like '192.168.0.5:5000'.
-            self.nodes.add(parsed_url.path)
-        else:
-            raise ValueError('Invalid URL')
-
-    def remove_nodes(self):
-        """
-        Clear nodes list.
-        """
-        self.nodes = set()
-
-    def get_nodes(self):
-        response = {
-            'message': 'Nodes',
-            'total_nodes': list(self.nodes),
-        }
-        return jsonify(response)
-
-    def register_nodes(self, values):
-        nodes = values.get('nodes')
-        if nodes is None:
-            return "Error: Please supply a valid list of nodes", 400
-
-        for node in nodes:
-            self.register_node(node)
-
-        response = {
-            'message': 'New nodes have been added',
-            'total_nodes': list(self.nodes),
-        }
-        return jsonify(response), 201

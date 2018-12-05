@@ -195,6 +195,23 @@ class POWNode(BCNode):
                          server=server, sargs=sargs, sdir=sdir,
                          client=client, cargs=cargs, cdir=cdir,
                          ip=ip, port=port, **params )
+
+class POSNode(BCNode):
+    """A POSNode is a BCNode that is running an POSBlockChain."""
+
+    def __init__( self, name, bcclass=None, inNamespace=True,
+                  server='blockchain.py',
+                  sargs='-p {port} -d {sdir}/pow-{IP}.db -v pos',
+                  sdir='/tmp/bcn/',
+                  client='curl',
+                  cargs="-s -X GET -H 'Content-Type: application/json' -d '{data}' http://{IP}:{port}/{command}",
+                  cdir=None,
+                  ip="127.0.0.1", port='5000', **params ):
+
+        BCNode.__init__( self, name, inNamespace=inNamespace,
+                         server=server, sargs=sargs, sdir=sdir,
+                         client=client, cargs=cargs, cdir=cdir,
+                         ip=ip, port=port, **params )
 class QNode(BCNode):
     """A QNode is a BCNode that is running an QuantumBlockChain application."""
 

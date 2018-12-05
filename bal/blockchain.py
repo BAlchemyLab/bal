@@ -2,22 +2,21 @@
 
 from flask import Flask, jsonify, request
 
-# Instantiate the Node
+# Instantiate the peer
 from QuantumBlockChain import QuantumBlockChain
 from POWBlockChain import POWBlockChain
 from POSBlockChain import POSBlockChain
 
 from Transaction import new_transaction
 from TransactionPool import TransactionPool
-from p2p import broadcast_latest, broadcast_transaction_pool
 from Wallet import init_wallet, get_public_from_wallet
 
+import threading
 app = Flask(__name__)
 
 
 # Instantiate the Blockchain
 blockchain = None
-transaction_pool = None
 
 @app.route('/transactions/unspenttxouts', methods=['GET'])
 def get_unspent_tx_outputs():
@@ -32,14 +31,19 @@ def r_address():
     address = get_public_from_wallet()
     return jsonify({'address': address}), 200
 
-@app.route('/balance', methods=['GET'])
-def r_get_balance():
-    balance = blockchain.get_account_balance()
+@app.route('/balance/my', methods=['GET'])
+def r_get_my_balance():
+    balance = blockchain.get_my_account_balance()
+    return jsonify({'balance': balance}), 200
+
+@app.route('/balance/<address>', methods=['GET'])
+def r_get_balance(address):
+    balance = blockchain.get_account_balance(address)
     return jsonify({'balance': balance}), 200
 
 @app.route('/transactions/pool', methods=['GET'])
 def r_get_transaction_pool():
-    return jsonify(transaction_pool.get_transaction_pool()), 200
+    return jsonify(blockchain.transaction_pool.get_transaction_pool()), 200
 
 @app.route('/block/generate', methods=['GET'])
 def r_generate_block():
@@ -48,10 +52,6 @@ def r_generate_block():
         return jsonify(new_block), 200
     else:
         return 'Could not generate new block', 400
-
-@app.route('/mine', methods=['GET'])
-def do_mine():
-    return blockchain.mine()
 
 @app.route('/block/new', methods=['POST'])
 def new_block():
@@ -83,86 +83,31 @@ def do_new_transaction():
 def do_full_chain():
     return jsonify(blockchain.full_chain()), 200
 
-@app.route('/nodes', methods=['GET'])
-def do_get_nodes():
-    return blockchain.get_nodes()
+@app.route('/peers', methods=['GET'])
+def do_get_peers():
+    return jsonify(blockchain.p2p.get_peers()), 200
 
-@app.route('/nodes', methods=['DELETE'])
-def do_remove_nodes():
-    blockchain.remove_nodes()
-    response = {
-        'message': 'Nodes removed',
-        'total_nodes': list(blockchain.get_nodes()),
-    }
-    return jsonify(response)
+@app.route('/peers/register', methods=['POST'])
+def do_register_peers():
+    values = request.get_json()['peer']
+    if not values:
+        return 'Missing values', 200
+    return jsonify(blockchain.p2p.add_peer(values)), 200
 
-@app.route('/nodes/register', methods=['POST'])
-def do_register_nodes():
-    values = request.get_json()
-
-    return blockchain.register_nodes(values)
-
-@app.route('/nodes/resolve', methods=['GET'])
+@app.route('/peers/resolve', methods=['GET'])
 def do_consensus():
     return blockchain.consensus()
 
-# TODO: Broadcast Class
-@app.route('/broadcast/blockchain', methods=['POST'])
-def receive_broadcast_latest():
-    values = request.get_json()
-    if not values:
-        print('invalid blocks received: %s', json.dumps(values))
-        return
-
-    handle_blockchain_response(received_blocks)
-
-@app.route('/broadcast/transaction_pool', methods=['POST'])
-def receive_broadcast_transaction_pool():
-    received_transactions = request.get_json()
-    if not received_transactions:
-        print('invalid transaction received: %s', json.dumps(value))
-        return
-
-    for transaction in received_transactions:
-        try:
-            self.handle_received_transaction(transaction)
-            broadcast_transaction_pool(transaction_pool.get_transaction_pool(), blockchain.get_nodes())
-        except:
-            print(e.message)
-
-@app.route('/broadcast/blockchain', methods=['GET'])
-def response_all_blockchain_broadcast():
-    return jsonify(blockchain.full_chain()), 200
-
-def handle_blockchain_response(received_blocks):
-    if len(received_blocks == 0):
-        print('received block chain size of 0')
-        return
-
-    latest_block_received = received_blocks[-1]
-    if not blockchain.is_valid_block_structure(latest_block_received):
-        print('block structuture not valid')
-        return
-
-    latest_block_held = blockchain.get_latest_block()
-    if latest_block_received['index'] > latest_block_held['index']:
-        if latest_block_held['hash'] == latest_block_received['previous_hash']:
-            if add_block_to_chain(latest_block_received):
-                broadcast_latest([blockchain.get_latest_block()])
-            elif len(received_blocks) == 1:
-                print('We have to query the chain from our peer')
-                broadcast('blockchain')
-        else:
-            print('Received blockchain is longer than current blockchain')
-            blockchain.replace_chain(received_blocks)
-    else:
-        print('received blockchain is not longer than received blockchain. Do nothing')
+@app.route('/mine', methods=['GET'])
+def do_mine():
+    return blockchain.mine()
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
+    parser.add_argument('-s', '--socket', default=6001, type=int, help='p2p port to listen on')
     parser.add_argument('-d', '--db', default='', help='db file')
     parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow[:initial_difficulty]" or "quant"')
     parser.add_argument('-k', '--keystore', default='private_key.pem', help='where the keystore located. default: private_key.pem')
@@ -170,6 +115,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     port = args.port
     dbfile = args.db
+    p2p_port = args.socket
     if args.variant.find('pow') == 0:
         pow = args.variant.split(':')
         if len(pow) == 2:
@@ -179,9 +125,12 @@ if __name__ == '__main__':
     elif args.variant == 'quant':
         blockchain = QuantumBlockChain(app)
     elif args.variant == 'pos':
-        transaction_pool = TransactionPool()
-        blockchain = POSBlockChain(transaction_pool)
+        blockchain = POSBlockChain(p2p_port)
         init_wallet(args.keystore)
+        threading.Thread(
+            target = blockchain.p2p.start,
+            args = ()
+        ).start()
     else:
         blockchain = POWBlockChain()
     if args.db:
