@@ -1,0 +1,18 @@
+# dev env install:
+pip install pipenv
+pipenv --python=python3.6
+pipenv install
+echo "PYTHONPATH=bal" > .env
+pipenv shell
+python setup.py install
+
+
+# export PYTHONPATH=bal
+
+
+install mininet (try first with package if not work then install from source)
+
+# mininet VM install:
+python setup.py install
+cp blockchain.py to sudo path
+easy_install dist/bal-xxx.egg
