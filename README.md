@@ -14,8 +14,7 @@ $ pip install -r requirements.txt
 ```
 
 5. Run the server:
-    * `$ python2 blockchain.py -p 5001 -d pow.db -v pow:2`
-    * `$ python3 blockchain.py --port 5002 --db quant.db --variant quant`
+    * `$ python blockchain.py -p 5001 -d pow.db -v pow:2`
 
 ## Parameters
 
@@ -43,7 +42,6 @@ Mininet's custom setup for BAL classes balmn.py add several types of hosts:
 * btc -- bcnode.BtcNode
 * eth -- bcnode.EthNode
 * pow -- bcnode.POWNode
-* qkd -- bcnode.QNode
 
 For example:
 ```

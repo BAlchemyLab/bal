@@ -14,5 +14,6 @@ install mininet (try first with package if not work then install from source)
 
 # mininet VM install:
 python setup.py install
-cp blockchain.py to sudo path
+cp blockchain.py to usr/bin/env python
+change #!/bin/env python in blockchain.py to #!usr/bin/env python
 easy_install dist/bal-xxx.egg
