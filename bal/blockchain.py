@@ -3,7 +3,6 @@
 from flask import Flask, jsonify, request
 
 # Instantiate the peer
-from QuantumBlockChain import QuantumBlockChain
 from POWBlockChain import POWBlockChain
 from POSBlockChain import POSBlockChain
 
@@ -126,8 +125,6 @@ if __name__ == '__main__':
             blockchain = POWBlockChain(initial_difficulty=int(pow[1]))
         else:
             blockchain = POWBlockChain()
-    elif args.variant == 'quant':
-        blockchain = QuantumBlockChain(app)
     elif args.variant == 'pos':
         blockchain = POSBlockChain(p2p_port)
         init_wallet(args.keystore)
