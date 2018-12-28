@@ -112,8 +112,8 @@ def validate_tx_in(tx_in, transaction, a_unspent_tx_outs):
 
     address = referenced_u_tx_out['address']
 
-    key = VerifyingKey.from_der(bytes.fromhex(address))
-    signature = bytes.fromhex(tx_in['signature'])
+    key = VerifyingKey.from_der(address.decode("hex"))
+    signature = tx_in['signature'].decode("hex")
     valid_signature = key.verify(signature, transaction['id'].encode())
     if not valid_signature:
         print('invalid txIn signature: %s txId: %s address: %s', tx_in['signature'], transaction['id'], referenced_u_tx_out['address'])
@@ -141,14 +141,14 @@ def sign_tx_in(transaction, tx_in_index, private_key, unspent_tx_outs):
         raise
 
     referenced_address = referenced_unspent_tx_out['address']
-    signing_key = SigningKey.from_der(bytes.fromhex(private_key))
+    signing_key = SigningKey.from_der(private_key.decode('hex'))
 
-    if signing_key.get_verifying_key().to_der().hex() != referenced_address:
+    if signing_key.get_verifying_key().to_der().encode('hex') != referenced_address:
         print('trying to sign an input with private' +
             ' key that does not match the address that is referenced in txIn')
         raise
 
-    signature = signing_key.sign(tx_to_sign.encode()).hex()
+    signature = signing_key.sign(tx_to_sign.encode()).encode('hex')
     return signature
 
 def update_unspent_tx_outs(a_transactions, a_unspent_tx_outs):

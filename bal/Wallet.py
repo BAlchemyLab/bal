@@ -6,13 +6,13 @@ import json
 from functional import seq
 
 def get_private_from_wallet():
-    sk = SigningKey.from_pem(open(PRIVATE_KEY_LOCATION).read().encode())
-    return sk.to_der().hex()
+    sk = SigningKey.from_pem(open(PRIVATE_KEY_LOCATION).read())
+    return sk.to_der().encode('hex')
 
 def get_public_from_wallet():
     private_key = get_private_from_wallet()
-    decoded = SigningKey.from_der(bytes.fromhex(private_key))
-    return decoded.get_verifying_key().to_der().hex()
+    decoded = SigningKey.from_der(private_key.decode("hex"))
+    return decoded.get_verifying_key().to_der().encode('hex')
 
 def generate_private_key():
     private_key = SigningKey.generate(curve=SECP256k1)
@@ -25,7 +25,7 @@ def init_wallet(keystore_path):
     if os.path.exists(PRIVATE_KEY_LOCATION):
         return
 
-    new_private_key = generate_private_key().to_pem().decode()
+    new_private_key = generate_private_key().to_pem()
     try:
         with open(PRIVATE_KEY_LOCATION, "w") as f:
             f.write(new_private_key)
@@ -83,8 +83,8 @@ def filter_tx_pool_txs(unspent_tx_outs, transaction_pool):
 
 def create_transaction(receiver_address, amount, private_key, unspent_tx_outs, tx_pool):
     print('txPool: %s', json.dumps(tx_pool))
-    decoded = SigningKey.from_der(bytes.fromhex(private_key))
-    my_address = decoded.get_verifying_key().to_der().hex()
+    decoded = SigningKey.from_der(private_key.decode("hex"))
+    my_address = decoded.get_verifying_key().to_der().encode('hex')
     my_unspent_tx_outs_a = find_unspent_tx_outs(my_address, unspent_tx_outs)
 
     my_unspent_tx_outs = filter_tx_pool_txs(my_unspent_tx_outs_a, tx_pool)

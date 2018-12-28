@@ -12,6 +12,8 @@ from TransactionPool import TransactionPool
 from Wallet import init_wallet, get_public_from_wallet
 
 import threading
+import yaml
+import json
 app = Flask(__name__)
 
 
@@ -55,7 +57,7 @@ def r_generate_block():
 
 @app.route('/block/new', methods=['POST'])
 def new_block():
-    values = request.get_json()
+    values = yaml.safe_load(json.dumps(request.get_json()))
     return blockchain.new_block(values['index'], values['timestamp'],
                                 values['previous_hash'], values['transactions'],
                                 values['difficulty'],
@@ -63,7 +65,7 @@ def new_block():
 
 @app.route('/transactions/send', methods=['POST'])
 def do_new_transaction():
-    values = request.get_json()
+    values = yaml.safe_load(json.dumps(request.get_json()))
 
     # Check that the required fields are in the POST'ed data
     required = ['recipient', 'amount']
@@ -89,11 +91,13 @@ def do_get_peers():
 
 @app.route('/peers/register', methods=['POST'])
 def do_register_peers():
-    values = request.get_json()['peer']
+    values = yaml.safe_load(json.dumps(request.get_json()))['peer']
     if not values:
         return 'Missing values', 200
     return jsonify(blockchain.p2p.add_peer(values)), 200
 
+#----------------------------------------------------------
+#POW
 @app.route('/peers/resolve', methods=['GET'])
 def do_consensus():
     return blockchain.consensus()
