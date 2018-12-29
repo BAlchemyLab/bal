@@ -52,20 +52,3 @@ class MyTopo( Topo ):
         self.addLink(s4, h7)
         self.addLink(h7, s7)
         self.addLink(s7, h10)
-
-        info( '*** Starting network\n')
-        self.build()
-        info( '*** Starting controllers\n')
-        for controller in self.controllers:
-            controller.start()
-
-        info( '*** Starting switches\n')
-        self.get('s7').start([])
-        self.get('s10').start([])
-        self.get('s9').start([])
-        self.get('s4').start([])
-        self.get('s6').start([])
-        self.get('s2').start([])
-        self.get('s1').start([])
-        self.get('s3').start([])
-        self.get('s5').start([])
