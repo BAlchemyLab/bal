@@ -1,46 +1,31 @@
-# Python 3 -> 2 compatibility
-# Python 3 -> 2 compatibility
-try:  # Python 3
-    from urllib.parse import urlparse
-except:
-    from urlparse import urlparse
-
-from uuid import uuid4
 import hashlib
 import json
 from time import time
-import abc
 import shelve
-from flask import jsonify
 import functools
-
+import abc
 from builtins import super
-import requests
 import copy
 from functional import seq
 import numbers
-
-import hashlib
 
 from p2p import P2P
 from Transaction import new_coinbase_transaction, is_valid_address, process_transactions, new_transaction
 from TransactionPool import TransactionPool
 from Wallet import create_transaction, find_unspent_tx_outs, get_balance, get_private_from_wallet, get_public_from_wallet
 
-VALIDATING_WITHOUT_COIN = 10
 DIFFICULTY_ADJUSTMENT_INTERVAL = 16 # block number
 BLOCK_GENERATION_INTERVAL = 5 # in seconds
 VALID_TIMESTAMP_INTERVAL = 60 # in seconds
 
-class POSBlockChain:
-    def __init__(self, p2p_port):
+class BaseBlockchain(object):
+    def __init__(self, p2p_port, initial_difficulty):
         self.transaction_pool = TransactionPool()
         self.current_transactions = []
         # Create the genesis block
         self.db = None
         self.p2p = P2P(self, p2p_port)
-        # Generate a globally unique address for this node
-        self.node_identifier = str(uuid4()).replace('-', '')
+        self.initial_difficulty = initial_difficulty
         self.chain = [self.genesis_block()]
         self.unspent_tx_outs = process_transactions(self.chain[0]['transactions'], [], 0) or []
 
@@ -58,6 +43,9 @@ class POSBlockChain:
     def get_blockchain(self):
         return self.chain
 
+    def get_initial_difficulty(self):
+        return self.initial_difficulty
+
     def get_unspent_tx_outs(self):
         return self.unspent_tx_outs
 
@@ -71,8 +59,29 @@ class POSBlockChain:
                     'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
                 }
 
+    @abc.abstractmethod
+    def find_block(self, index, previous_hash, transactions, difficulty):
+         return NotImplemented
+
     def genesis_block(self):
-        return self.raw_block(0, 1465154705, '', [self.genesis_transaction()], 0, 0, '0001')
+        return self.raw_block(0, 1465154705, '', [self.genesis_transaction()], self.get_initial_difficulty())
+
+    def raw_block(self, index, timestamp, previous_hash, transactions, proof):
+        """
+        Create a new Block in the Blockchain
+        :param previous_hash: Hash of previous Block
+        :return: New Block
+        """
+
+        block = {
+            'index': index,
+            'timestamp': timestamp,
+            'previous_hash': previous_hash,
+            'transactions': transactions,
+            'difficulty': difficulty,
+        }
+        block['hash'] = self.hash(block)
+        return block
 
     def get_difficulty(self, a_block_chain):
         latest_block = a_block_chain[-1]
@@ -96,25 +105,6 @@ class POSBlockChain:
         result = (previous_block['timestamp'] - VALID_TIMESTAMP_INTERVAL < block['timestamp']) and \
                     block['timestamp'] - VALID_TIMESTAMP_INTERVAL < time()
         return result
-
-    def raw_block(self, index, timestamp, previous_hash, transactions, difficulty, staker_balance, staker_address):
-        """
-        Create a new Block in the Blockchain
-        :param previous_hash: Hash of previous Block
-        :return: New Block
-        """
-
-        block = {
-            'index': index,
-            'timestamp': timestamp,
-            'previous_hash': previous_hash,
-            'transactions': transactions,
-            'difficulty': difficulty,
-            'staker_balance': staker_balance,
-            'staker_address': staker_address
-        }
-        block['hash'] = self.hash(block)
-        return block
 
     def generate_raw_next_block(self, transactions):
         previous_block = self.get_latest_block()
@@ -147,36 +137,6 @@ class POSBlockChain:
         block_data = [coinbase_tx, tx]
         return self.generate_raw_next_block(block_data)
 
-    def is_block_staking_valid(self, block):
-        difficulty = block['difficulty'] + 1
-
-        if block['index'] <= VALIDATING_WITHOUT_COIN:
-            balance = block['staker_balance'] + 1
-        else:
-            balance = block['staker_balance']
-
-        balance_over_difficulty = (2**256) * balance/difficulty
-        previous_hash = block['previous_hash']
-        staker_address = block['staker_address']
-        timestamp = block['timestamp']
-
-        guess = '{}{}{}'.format(previous_hash, staker_address, timestamp).encode()
-        guess_hash = hashlib.sha256(guess).hexdigest()
-        staking_hash_decimal = int(guess_hash, 16)
-        difference = balance_over_difficulty - staking_hash_decimal
-
-        return difference >= 0
-
-    def find_block(self, index, previous_hash, transactions, difficulty):
-        previous_time_stamp = 0
-        while (True):
-            timestamp = time()
-            if previous_time_stamp != timestamp:
-                temp_block = self.raw_block(index, timestamp, previous_hash, transactions, difficulty, self.get_my_account_balance(), get_public_from_wallet())
-                if self.is_block_staking_valid(temp_block):
-                    return temp_block
-                previous_time_stamp = timestamp
-
     def get_my_account_balance(self):
         return self.get_account_balance(get_public_from_wallet())
 
@@ -195,17 +155,12 @@ class POSBlockChain:
                  type(block['previous_hash']) == str and \
                  isinstance(block['timestamp'], numbers.Number) and \
                  type(block['transactions']) == list and \
-                 isinstance(block['difficulty'], numbers.Number) and \
-                 isinstance(block['staker_balance'], numbers.Number) and \
-                 type(block['staker_address']) == str
+                 isinstance(block['difficulty'], numbers.Number)
 
     def has_valid_hash(self, block):
         block_content = {x: block[x] for x in block if x != 'hash'}
         if not self.hash(block_content) == block['hash']:
-            print('invalid hash, got:' + block.hash)
-            return False
-        if not self.is_block_staking_valid(block):
-            print('staking hash not lower than balance over diffculty times 2^256')
+            print('invalid hash, got:' + block['hash'])
             return False
         return True
 
@@ -233,23 +188,6 @@ class POSBlockChain:
         # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
         block_string = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
-
-    def consensus(self):
-        replaced = self.resolve_conflicts()
-
-        if replaced:
-            self.save_db()
-            response = {
-                'message': 'Our chain was replaced',
-                'new_chain': self.chain
-            }
-        else:
-            response = {
-                'message': 'Our chain is authoritative',
-                'chain': self.chain
-            }
-
-        return jsonify(response), 200
 
     def valid_chain(self, chain):
         """

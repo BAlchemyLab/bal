@@ -180,7 +180,7 @@ class BtcNode(BCNode):
             self.execed = False
 
 class POWNode(BCNode):
-    """A POWNode is a BCNode that is running an POWBlockChain."""
+    """A POWNode is a BCNode that is running an POWBlockchain."""
 
     def __init__( self, name, bcclass=None, inNamespace=True,
                   server='blockchain.py',
@@ -197,7 +197,7 @@ class POWNode(BCNode):
                          ip=ip, port=port, **params )
 
 class POSNode(BCNode):
-    """A POSNode is a BCNode that is running an POSBlockChain."""
+    """A POSNode is a BCNode that is running an POSBlockchain."""
 
     def __init__( self, name, bcclass=None, inNamespace=True,
                   server='blockchain.py',

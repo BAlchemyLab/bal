@@ -21,12 +21,12 @@ $ pip install -r requirements.txt
     '-p', '--port', default=5000, type=int, help='port to listen on'
     '-d', '--db', default='', help='db file, if not passed, then no persistance'
     '-v', '--variant', default='pow', help='variant of blockchain "pow[:difficulty]" or "quant", where:
-          * pow[:difficulty] -- POWBlockChain with possibility of "difficulty" setting (4 by default)
+          * pow[:difficulty] -- POWBlockchain with possibility of "difficulty" setting (4 by default)
 
 ## Testing
 Internal test:
 ```
-python -m unittest tests.test_BaseBlockChain
+python -m unittest tests.test_BaseBlockchain
 ```
 
 Test REST API POW:

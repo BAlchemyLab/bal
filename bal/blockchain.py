@@ -3,8 +3,8 @@
 from flask import Flask, jsonify, request
 
 # Instantiate the peer
-from POWBlockChain import POWBlockChain
-from POSBlockChain import POSBlockChain
+from POWBlockchain import POWBlockchain
+from POSBlockchain import POSBlockchain
 
 from Transaction import new_transaction
 from TransactionPool import TransactionPool
@@ -54,7 +54,7 @@ def r_generate_block():
     else:
         return 'Could not generate new block', 400
 
-@app.route('/block/new', methods=['POST'])
+@app.route('/block/new', methods=['POST']) #!!!
 def new_block():
     values = yaml.safe_load(json.dumps(request.get_json()))
     return blockchain.new_block(values['index'], values['timestamp'],
@@ -95,46 +95,33 @@ def do_register_peers():
         return 'Missing values', 200
     return jsonify(blockchain.p2p.add_peer(values)), 200
 
-#----------------------------------------------------------
-#POW
-@app.route('/peers/resolve', methods=['GET'])
-def do_consensus():
-    return blockchain.consensus()
-
-@app.route('/mine', methods=['GET'])
-def do_mine():
-    return blockchain.mine()
-
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
     parser.add_argument('-s', '--socket', default=6001, type=int, help='p2p port to listen on')
-    parser.add_argument('-d', '--db', default='', help='db file')
-    parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow[:initial_difficulty]" or "quant"')
+    parser.add_argument('-db', '--database', default='', help='db file')
+    parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow" or "pos"')
+    parser.add_argument('-d', '--difficulty', default=2, help='initial difficulty')
     parser.add_argument('-k', '--keystore', default='/tmp/private_key.pem', help='where the keystore located. default: private_key.pem')
 
     args = parser.parse_args()
     port = args.port
-    dbfile = args.db
+    dbfile = args.database
     p2p_port = args.socket
-    if args.variant.find('pow') == 0:
-        pow = args.variant.split(':')
-        if len(pow) == 2:
-            blockchain = POWBlockChain(initial_difficulty=int(pow[1]))
-        else:
-            blockchain = POWBlockChain()
-    elif args.variant == 'pos':
-        blockchain = POSBlockChain(p2p_port)
-        init_wallet(args.keystore)
-        threading.Thread(
-            target = blockchain.p2p.start,
-            args = ()
-        ).start()
+    initial_difficulty = args.difficulty
+    if args.variant.find('pos') == 0:
+        blockchain = POSBlockchain(p2p_port, initial_difficulty)
     else:
-        blockchain = POWBlockChain()
-    if args.db:
+        blockchain = POWBlockchain(p2p_port, initial_difficulty)
+
+    if dbfile:
         print("DB: " + dbfile)
         blockchain.init_db(dbfile)
+    init_wallet(args.keystore)
+    threading.Thread(
+        target = blockchain.p2p.start,
+        args = ()
+    ).start()
     app.run(host='0.0.0.0', port=port, threaded=True)

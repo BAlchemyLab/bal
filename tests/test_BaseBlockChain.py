@@ -2,13 +2,13 @@ import hashlib
 import json
 from unittest import TestCase
 
-from BaseBlockChain import BaseBlockChain
+from BaseBlockchain import BaseBlockchain
 
 
 class BaseBlockchainTestCase(TestCase):
 
     def setUp(self):
-        self.blockchain = BaseBlockChain()
+        self.blockchain = BaseBlockchain()
 
     def create_block(self, proof=123, previous_hash='abc'):
         self.blockchain.new_block(proof, previous_hash)
@@ -24,21 +24,21 @@ class BaseBlockchainTestCase(TestCase):
 class TestRegisterNodes(BaseBlockchainTestCase):
 
     def test_valid_nodes(self):
-        blockchain = BaseBlockChain()
+        blockchain = BaseBlockchain()
 
         blockchain.register_node('http://192.168.0.1:5000')
 
         self.assertIn('192.168.0.1:5000', blockchain.nodes)
 
     def test_malformed_nodes(self):
-        blockchain = BaseBlockChain()
+        blockchain = BaseBlockchain()
 
         blockchain.register_node('http//192.168.0.1:5000')
 
         self.assertNotIn('192.168.0.1:5000', blockchain.nodes)
 
     def test_idempotency(self):
-        blockchain = BaseBlockChain()
+        blockchain = BaseBlockchain()
 
         blockchain.register_node('http://192.168.0.1:5000')
         blockchain.register_node('http://192.168.0.1:5000')

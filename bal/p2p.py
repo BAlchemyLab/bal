@@ -2,6 +2,7 @@ import socket, select, pickle, threading
 from enum import Enum
 from time import sleep
 import json
+import struct
 
 class MessageType(Enum):
     QUERY_LATEST_BLOCK = 0
@@ -75,8 +76,10 @@ class P2P:
             else:
                 peer_socket = self.peer_sockets[peer_str]
                 peer_socket.connect(peer_addr)
-            peer_socket.send(pickle.dumps(data))
-        except ConnectionRefusedError:
+            dumped_data = pickle.dumps(data)
+            msg = struct.pack('>I', len(dumped_data)) + dumped_data
+            peer_socket.sendall(msg)
+        except Exception:
             pass
 
     def process_response_chain(self, message):
@@ -119,6 +122,25 @@ class P2P:
         port = int(vals[1])
         return (address, port)
 
+    def recv_msg(self, sock):
+        # Read message length and unpack it into an integer
+        raw_msglen = self.recvall(sock, 4)
+        if not raw_msglen:
+            return None
+        msglen = struct.unpack('>I', raw_msglen)[0]
+        # Read the message data
+        return self.recvall(sock, msglen)
+
+    def recvall(self, sock, n):
+        # Helper function to recv n bytes or return None if EOF is hit
+        data = b''
+        while len(data) < n:
+            packet = sock.recv(n - len(data))
+            if not packet:
+                return None
+            data += packet
+        return data
+
     def start(self):
         self.p2p_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.p2p_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -127,7 +149,7 @@ class P2P:
         while True:
             conn_socket, addr = self.p2p_socket.accept()
 
-            message = conn_socket.recv(4096)
+            message = self.recv_msg(conn_socket)
             try:
                 message = pickle.loads(message)
                 print(message.type)
