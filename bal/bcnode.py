@@ -101,7 +101,6 @@ class BCNode( CPULimitedHost):
         result = self.cmdPrint( cmd )
 
         debug("command: %s = %s" % (cmd, result))
-        return result
 
 class EthNode(BCNode):
     """A EthNode is a BCNode that is running an Geth application."""
