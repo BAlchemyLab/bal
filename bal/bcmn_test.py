@@ -13,8 +13,7 @@ from mininet.util import specialClass
 tests = {
     "btc": [bcnode.BtcNode, 'getwalletinfo'],
     "eth": [bcnode.EthNode, 'admin.nodeInfo'],
-    "pow": [bcnode.POWNode, 'chain'],
-    "qkd": [bcnode.QNode, 'chain']
+    "pow": [bcnode.POWNode, 'chain']
     }
 
 test = tests[sys.argv[1]]

@@ -46,6 +46,10 @@ class BCNode( CPULimitedHost):
             pathCheck( self.server )
             cout = '/tmp/bc_' + self.name + '.log'
             if self.sdir is not None:
+                try:
+                    os.stat(self.sdir)
+                except:
+                    os.mkdir(self.sdir)
                 self.cmd( 'cd ' + self.sdir )
             cmd = self.server
             if self.sargs:
@@ -119,7 +123,7 @@ class EthNode(BCNode):
     def start( self ):
         """Start <bcnode> <args> on node.
            Log to /tmp/bc_<name>.log"""
- 
+
         if self.server:
             pathCheck( self.server )
             cout = '/tmp/bc_' + self.name + '.log'
@@ -176,7 +180,7 @@ class BtcNode(BCNode):
             self.execed = False
 
 class POWNode(BCNode):
-    """A POWNode is a BCNode that is running an POWBlockChain."""
+    """A POWNode is a BCNode that is running an POWBlockchain."""
 
     def __init__( self, name, bcclass=None, inNamespace=True,
                   server='blockchain.py',
@@ -191,60 +195,20 @@ class POWNode(BCNode):
                          server=server, sargs=sargs, sdir=sdir,
                          client=client, cargs=cargs, cdir=cdir,
                          ip=ip, port=port, **params )
-class QNode(BCNode):
-    """A QNode is a BCNode that is running an QuantumBlockChain application."""
+
+class POSNode(BCNode):
+    """A POSNode is a BCNode that is running an POSBlockchain."""
 
     def __init__( self, name, bcclass=None, inNamespace=True,
                   server='blockchain.py',
-                  sargs='-p {port} -d {sdir}/qkd-{IP}.db',
-                  sdir='/tmp/bcn',
+                  sargs='-p {port} -d {sdir}/pow-{IP}.db -v pos -k /tmp/{IP}.pem',
+                  sdir='/tmp/bcn/',
                   client='curl',
                   cargs="-s -X GET -H 'Content-Type: application/json' -d '{data}' http://{IP}:{port}/{command}",
                   cdir=None,
-                  keyworker='keyworker', kargs='-d 1', kdir=None,
-                  qkdemu='qkdemu', eargs='http://localhost:55554', edir=None,
                   ip="127.0.0.1", port='5000', **params ):
-
-        # Keyworker params
-        self.keyworker = keyworker
-        self.kargs = kargs
-        self.kdir = kdir
-
-        # QKD emulator params
-        self.qkdemu = qkdemu
-        self.eargs = eargs
-        self.edir = edir
 
         BCNode.__init__( self, name, inNamespace=inNamespace,
                          server=server, sargs=sargs, sdir=sdir,
                          client=client, cargs=cargs, cdir=cdir,
                          ip=ip, port=port, **params )
-
-    def kwstart( self ):
-        """Start keyworker on node.
-           Log to /tmp/kw_<name>.log"""
-        if self.keyworker:
-            pathCheck( self.keyworker )
-            cout = '/tmp/kw_' + self.name + '.log'
-            if self.kdir is not None:
-                self.cmd( 'cd ' + self.kdir )
-            debug( self.keyworker + ' ' + self.kargs +
-                   ' 1>' + cout + ' 2>' + cout + ' &' )
-            self.cmd( self.keyworker + ' ' + self.kargs +
-                      ' 1>' + cout + ' 2>' + cout + ' &' )
-            self.kexeced = False
-
-    def kwstop( self, *args, **kwargs ):
-        "Stop keyworker."
-        self.cmd( 'kill %' + self.keyworker )
-        self.cmd( 'wait %' + self.keyworker )
-        super( BCNode, self ).stop( *args, **kwargs )
-
-    def qkey( self ):
-        """Send emulated quantum key to keyworker.
-           Log to /tmp/kqd_<name>.log"""
-        if self.edir is not None:
-            self.cmd( 'cd ' + self.edir )
-        cout = '/tmp/kqd_' + self.name + '.log'
-        self.cmd( self.qkdemu + ' ' + self.eargs +
-                  ' 1>' + cout + ' 2>' + cout )
