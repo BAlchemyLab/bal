@@ -1,4 +1,4 @@
-from miniself.topo import Topo
+from mininet.topo import Topo
 from mininet.node import Controller, RemoteController, OVSController
 from mininet.node import CPULimitedHost, Host, Node
 from mininet.node import OVSKernelSwitch, UserSwitch
