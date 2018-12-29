@@ -21,5 +21,5 @@ TOPOS = { 'minimal': lambda: SingleSwitchTopo( k=2 ),
           'reversed': SingleSwitchReversedTopo,
           'single': SingleSwitchTopo,
           'none': None,
-          'tree': TreeTopo,
-          'my': MyTopo }
+          'tree': TreeTopo
+        }
