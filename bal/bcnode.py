@@ -183,7 +183,7 @@ class POWNode(BCNode):
 
     def __init__( self, name, bcclass=None, inNamespace=True,
                   server='blockchain.py',
-                  sargs='-p {port} -db {sdir}/pow-{IP}.db -k /tmp/{IP}pow.pem',
+                  sargs='-p {port} -db {sdir}/{IP}-pow.db -v pow -k /tmp/{IP}-pow.pem',
                   sdir='/tmp/bcn',
                   client='curl',
                   cargs="-s -X GET -H 'Content-Type: application/json' -d '{data}' http://{IP}:{port}/{command}",
@@ -200,7 +200,7 @@ class POSNode(BCNode):
 
     def __init__( self, name, bcclass=None, inNamespace=True,
                   server='blockchain.py',
-                  sargs='-p {port} -db {sdir}/pos-{IP}.db -v pos -k /tmp/{IP}pos.pem',
+                  sargs='-p {port} -db {sdir}/{IP}-pos.db -v pos -k /tmp/{IP}-pos.pem',
                   sdir='/tmp/bcn',
                   client='curl',
                   cargs="-s -X GET -H 'Content-Type: application/json' -d '{data}' http://{IP}:{port}/{command}",

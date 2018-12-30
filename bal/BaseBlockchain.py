@@ -265,7 +265,7 @@ class BaseBlockchain(object):
         db = shelve.open(self.db)
         try:
             if db['chain']:
-                self.chain = json.loads(db['chain'])
+                self.chain = yaml.safe_load(json.dumps(json.loads(db['chain'])))
                 if len(self.chain) > 0:
                     self.block = self.chain[len(self.chain) - 1]
                     self.transactions = self.chain[len(self.chain) - 1]['transactions']
