@@ -54,13 +54,10 @@ def r_generate_block():
     else:
         return 'Could not generate new block', 400
 
-@app.route('/block/new', methods=['POST']) #!!!
-def new_block():
-    values = yaml.safe_load(json.dumps(request.get_json()))
-    return blockchain.new_block(values['index'], values['timestamp'],
-                                values['previous_hash'], values['transactions'],
-                                values['difficulty'],
-                                values['staker_balance'], values['staker_address'])
+@app.route('/block/latest', methods=['GET'])
+def r_latest_block():
+    return jsonify(blockchain.get_latest_block()), 200
+
 
 @app.route('/transactions/send', methods=['POST'])
 def do_new_transaction():
@@ -103,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--socket', default=6001, type=int, help='p2p port to listen on')
     parser.add_argument('-db', '--database', default='', help='db file')
     parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow" or "pos"')
-    parser.add_argument('-d', '--difficulty', default=2, help='initial difficulty')
+    parser.add_argument('-d', '--difficulty', default=2, type=int, help='initial difficulty')
     parser.add_argument('-k', '--keystore', default='/tmp/private_key.pem', help='where the keystore located. default: private_key.pem')
 
     args = parser.parse_args()
