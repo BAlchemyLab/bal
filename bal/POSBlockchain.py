@@ -71,3 +71,14 @@ class POSBlockchain(BaseBlockchain):
                  isinstance(block['difficulty'], numbers.Number) and \
                  isinstance(block['staker_balance'], numbers.Number) and \
                  type(block['staker_address']) == str
+
+    def has_valid_hash(self, block):
+        block_content = {x: block[x] for x in block if x != 'hash'}
+        if not self.hash(block_content) == block['hash']:
+            print('invalid hash, got:' + block['hash'])
+            return False
+        if not self.is_block_staking_valid(block):
+            print('staking hash not lower than balance over diffculty times 2^256')
+            print('invalid hash, got:' + block['hash'])
+            return False
+        return True
