@@ -14,14 +14,16 @@ $ pip install -r requirements.txt
 ```
 
 5. Run the server:
-    * `$ python blockchain.py -p 5001 -d pow.db -v pow:2`
+    * `$ python blockchain.py -p 5001 -db pow.db -v pow`
 
 ## Parameters
 
     '-p', '--port', default=5000, type=int, help='port to listen on'
-    '-d', '--db', default='', help='db file, if not passed, then no persistance'
-    '-v', '--variant', default='pow', help='variant of blockchain "pow[:difficulty]" or "quant", where:
-          * pow[:difficulty] -- POWBlockchain with possibility of "difficulty" setting (4 by default)
+    '-db', '--database', default='', help='db file, if not passed, then no persistance'
+    '-v', '--variant', default='pow', help='variant of blockchain "pow" or "pos"'
+    '-s', '--socket', default=6001, type=int, help='p2p port to listen on'
+    '-d', '--difficulty', default=2, help='initial difficulty'
+    '-k', '--keystore', default='/tmp/private_key.pem', help='where the keystore is located.'
 
 ## Testing
 Internal test:
@@ -38,10 +40,20 @@ Test REST API POW:
 
 
 ## Blockchain Mininet network
+To install mininet please follow http://mininet.org/vm-setup-notes/, a fresh mininet virtual environment setup is recommended. For the VM Mininet 2.2.2 on Ubuntu 14.04 LTS - 64 bit follow these steps:
+Clone the project into a directory. `cd` to cloned directory.
+```
+sudo python setup.py install
+sudo easy_install dist/bal-xxx.egg
+sudo ln -s /home/mininet/bal/bal/blockchain.py /usr/local/bin/blockchain.py
+```
+change `#!/bin/env python` in `blockchain.py` to `#!usr/bin/env python`.
+
 Mininet's custom setup for BAL classes balmn.py add several types of hosts:
 * btc -- bcnode.BtcNode
 * eth -- bcnode.EthNode
 * pow -- bcnode.POWNode
+* pos -- bcnode.POSNode
 
 For example:
 ```
