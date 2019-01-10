@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 from flask import Flask, jsonify, request
 
@@ -20,44 +20,65 @@ app = Flask(__name__)
 blockchain = None
 
 @app.route('/transactions/unspenttxouts', methods=['GET'])
-def get_unspent_tx_outputs():
+def do_unspent_tx_outputs():
     return jsonify(blockchain.unspent_tx_outs), 200
 
 @app.route('/transactions/unspenttxouts/my', methods=['GET'])
-def my_unspent_tx_outs():
+def do_my_unspent_tx_outs():
     return jsonify(blockchain.get_my_unspent_transaction_outputs()), 200
 
 @app.route('/address/my', methods=['GET'])
-def r_address():
+def do_address():
     address = get_public_from_wallet()
     return jsonify({'address': address}), 200
 
 @app.route('/balance/my', methods=['GET'])
-def r_get_my_balance():
+def do_get_my_balance():
     balance = blockchain.get_my_account_balance()
     return jsonify({'balance': balance}), 200
 
 @app.route('/balance/<address>', methods=['GET'])
-def r_get_balance(address):
+def do_get_balance(address):
     balance = blockchain.get_account_balance(address)
     return jsonify({'balance': balance}), 200
 
 @app.route('/transactions/pool', methods=['GET'])
-def r_get_transaction_pool():
+def do_get_transaction_pool():
     return jsonify(blockchain.transaction_pool.get_transaction_pool()), 200
 
 @app.route('/block/generate', methods=['GET'])
-def r_generate_block():
+def do_generate_block():
     new_block = blockchain.generate_next_block()
     if new_block:
         return jsonify(new_block), 200
     else:
         return 'Could not generate new block', 400
 
+@app.route('/block/generate/<int:amount>', methods=['GET'])
+def do_generate_until_block(amount):
+    try:
+        threading.Thread(
+                target = do_generate_until_helper,
+                args = [amount]
+        ).start()
+        return "Started Generation(Asynchronous)", 200
+    except Exception as e:
+        return jsonify(e), 500
+
+def do_generate_until_helper(amount):
+    try:
+        while(blockchain.get_my_account_balance() < amount):
+            new_block = blockchain.generate_next_block()
+    except Exception:
+        pass
+
 @app.route('/block/latest', methods=['GET'])
-def r_latest_block():
+def do_latest_block():
     return jsonify(blockchain.get_latest_block()), 200
 
+@app.route('/block/<int:index>', methods=['GET'])
+def do_block_index(index):
+    return jsonify(blockchain.get_blockchain()[index]), 200
 
 @app.route('/transactions/send', methods=['POST'])
 def do_new_transaction():
@@ -81,6 +102,10 @@ def do_new_transaction():
 def do_full_chain():
     return jsonify(blockchain.full_chain()), 200
 
+@app.route('/chain/length', methods=['GET'])
+def do_chain_length():
+    return jsonify(blockchain.full_chain()['length']), 200
+
 @app.route('/peers', methods=['GET'])
 def do_get_peers():
     return jsonify(blockchain.p2p.get_peers()), 200
@@ -100,7 +125,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--socket', default=6001, type=int, help='p2p port to listen on')
     parser.add_argument('-db', '--database', default='', help='db file')
     parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow" or "pos"')
-    parser.add_argument('-d', '--difficulty', default=2, type=int, help='initial difficulty')
+    parser.add_argument('-d', '--difficulty', default=4, type=int, help='initial difficulty')
     parser.add_argument('-k', '--keystore', default='/tmp/private_key.pem', help='where the keystore located. default: private_key.pem')
 
     args = parser.parse_args()

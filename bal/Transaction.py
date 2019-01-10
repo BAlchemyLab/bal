@@ -6,7 +6,7 @@ import json
 import hashlib
 from itertools import chain
 from functools import reduce
-COINBASE_AMOUNT = 50
+COINBASE_AMOUNT = 10
 
 def new_unspent_tx_out(tx_out_id, tx_out_index, address, amount):
     result = {}
@@ -107,7 +107,7 @@ def validate_tx_in(tx_in, transaction, a_unspent_tx_outs):
     referenced_u_tx_out = find_unspent_tx_out(tx_in['tx_out_id'], tx_in['tx_out_index'], a_unspent_tx_outs)
 
     if not referenced_u_tx_out:
-        print('referenced txOut not found: ' + JSON.stringify(tx_in))
+        print('referenced txOut not found: ' + json.dumps(tx_in))
         return False
 
     address = referenced_u_tx_out['address']
@@ -247,7 +247,7 @@ def get_consumed_tx_outs(new_transactions):
             .map(lambda tx_in : new_unspent_tx_out(tx_in['tx_out_id'], tx_in['tx_out_index'], '',0))
 
 def get_resulting_unspent_tx_outs(unspent_tx_outs, consumed_tx_outs):
-    return [tx for tx in unspent_tx_outs if not find_unspent_tx_out(tx['tx_out_id'], tx['tx_out_index'], consumed_tx_outs)]
+    return [tx for tx in unspent_tx_outs or [] if not find_unspent_tx_out(tx['tx_out_id'], tx['tx_out_index'], consumed_tx_outs)]
 
 def has_valid_tx_ins(transaction, a_unspent_tx_outs):
     return seq(transaction['tx_ins'])\

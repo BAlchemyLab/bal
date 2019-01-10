@@ -50,8 +50,6 @@ sudo ln -s /home/mininet/bal/bal/blockchain.py /usr/local/bin/blockchain.py
 change `#!/bin/env python` in `blockchain.py` to `#!usr/bin/env python`.
 
 Mininet's custom setup for BAL classes balmn.py add several types of hosts:
-* btc -- bcnode.BtcNode
-* eth -- bcnode.EthNode
 * pow -- bcnode.POWNode
 * pos -- bcnode.POSNode
 

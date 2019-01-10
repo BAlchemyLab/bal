@@ -2,7 +2,7 @@ from mininet.node import ( Host, CPULimitedHost )
 from mininet.util import specialClass
 from mininet.topo import SingleSwitchTopo, LinearTopo, SingleSwitchReversedTopo
 from mininet.topolib import TreeTopo
-from bal.bcnode import ( EthNode, BtcNode, POWNode, POSNode )
+from bal.bcnode import ( POWNode, POSNode )
 from bal.MyTopo import MyTopo
 
 
@@ -11,8 +11,6 @@ HOSTS = { 'proc': Host,
           'rt': specialClass( CPULimitedHost, defaults=dict( sched='rt' ) ),
           'cfs': specialClass( CPULimitedHost, defaults=dict( sched='cfs' ) ),
           'pow': POWNode,
-          'btc': BtcNode,
-          'eth': EthNode,
           'pos': POSNode}
 
 TOPODEF = 'none'

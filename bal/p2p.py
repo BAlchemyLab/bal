@@ -152,8 +152,6 @@ class P2P:
             message = self.recv_msg(conn_socket)
             try:
                 message = pickle.loads(message)
-                print(message.type)
-                print(message.data)
 
                 peer_addr = (addr[0], message.reply_addr[1])
                 message.reply_addr = peer_addr

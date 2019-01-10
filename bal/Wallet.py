@@ -46,7 +46,7 @@ def get_balance(address, unspent_tx_outs):
             .sum()
 
 def find_unspent_tx_outs(owner_address, unspent_tx_outs):
-    return [u_tx_o for u_tx_o in unspent_tx_outs if u_tx_o['address'] == owner_address]
+    return [u_tx_o for u_tx_o in unspent_tx_outs or [] if u_tx_o['address'] == owner_address]
 
 def find_tx_outs_for_amount(amount, my_unspent_tx_outs):
     current_amount = 0
@@ -75,11 +75,11 @@ def filter_tx_pool_txs(unspent_tx_outs, transaction_pool):
                 .map(lambda tx : tx['tx_ins'])\
                 .flatten()
     removable = []
-    for unspent_tx_out in unspent_tx_outs:
+    for unspent_tx_out in unspent_tx_outs or []:
         tx_in = find_unspent_tx_out(unspent_tx_out['tx_out_id'], unspent_tx_out['tx_out_index'], tx_ins)
         if tx_in:
             removable.append(unspent_tx_out)
-    return [tx for tx in unspent_tx_outs if tx not in removable]
+    return [tx for tx in unspent_tx_outs or [] if tx not in removable]
 
 def create_transaction(receiver_address, amount, private_key, unspent_tx_outs, tx_pool):
     print('txPool: %s', json.dumps(tx_pool))

@@ -10,7 +10,7 @@ from functional import seq
 import numbers
 
 from p2p import P2P
-from Transaction import new_coinbase_transaction, is_valid_address, process_transactions, new_transaction
+from Transaction import new_coinbase_transaction, is_valid_address, process_transactions, new_transaction, COINBASE_AMOUNT
 from TransactionPool import TransactionPool
 from Wallet import create_transaction, find_unspent_tx_outs, get_balance, get_private_from_wallet, get_public_from_wallet
 
@@ -50,14 +50,7 @@ class BaseBlockchain(object):
         return self.unspent_tx_outs
 
     def genesis_transaction(self):
-        return {
-                    'tx_ins': [{'signature': '', 'tx_out_id': '', 'tx_out_index': 0}],
-                    'tx_outs': [{
-                        'address': '04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a',
-                        'amount': 50
-                    }],
-                    'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
-                }
+        return new_coinbase_transaction('04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a', 0)
 
     @abc.abstractmethod
     def find_block(self, index, previous_hash, transactions, difficulty):
