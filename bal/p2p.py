@@ -3,6 +3,7 @@ from enum import Enum
 from time import sleep
 import json
 import struct
+import traceback
 
 class MessageType(Enum):
     QUERY_LATEST_BLOCK = 0
@@ -181,9 +182,9 @@ class P2P:
                             self.blockchain().handle_received_transaction(transaction)
                             self.broadcast_transaction_pool()
                         except Exception as e:
-                            print(e)
+                            traceback.print_exc()
             except pickle.UnpicklingError as e:
-                print(e)
+                traceback.print_exc()
                 pass
 
         self.p2p_socket.close()

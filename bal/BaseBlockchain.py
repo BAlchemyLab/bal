@@ -27,7 +27,7 @@ class BaseBlockchain(object):
         self.p2p = P2P(self, p2p_port)
         self.initial_difficulty = initial_difficulty
         self.chain = [self.genesis_block()]
-        self.unspent_tx_outs = process_transactions(self.chain[0]['transactions'], [], 0) or []
+        self.unspent_tx_outs = process_transactions(self.chain[0]['transactions'], [], 0)
 
     @property
     def unspent_tx_outs(self):
@@ -259,9 +259,7 @@ class BaseBlockchain(object):
         try:
             if db['chain']:
                 self.chain = yaml.safe_load(json.dumps(json.loads(db['chain'])))
-                if len(self.chain) > 0:
-                    self.block = self.chain[len(self.chain) - 1]
-                    self.transactions = self.chain[len(self.chain) - 1]['transactions']
+
         except:
             db.close()
             self.save_db()

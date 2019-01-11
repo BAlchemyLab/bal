@@ -161,7 +161,7 @@ def update_unspent_tx_outs(a_transactions, a_unspent_tx_outs):
 def process_transactions(a_transactions, a_unspent_tx_outs, block_index):
     if not validate_block_transactions(a_transactions, a_unspent_tx_outs, block_index):
         print('invalid block transactions')
-        return None
+        return []
 
     return update_unspent_tx_outs(a_transactions, a_unspent_tx_outs)
 

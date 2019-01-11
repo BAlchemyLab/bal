@@ -13,11 +13,13 @@ from Wallet import init_wallet, get_public_from_wallet
 import threading
 import yaml
 import json
+import traceback
 app = Flask(__name__)
 
 
 # Instantiate the Blockchain
 blockchain = None
+loop_started = False
 
 @app.route('/transactions/unspenttxouts', methods=['GET'])
 def do_unspent_tx_outputs():
@@ -54,22 +56,38 @@ def do_generate_block():
     else:
         return 'Could not generate new block', 400
 
-@app.route('/block/generate/<int:amount>', methods=['GET'])
-def do_generate_until_block(amount):
+@app.route('/block/generate/loop/start', methods=['GET'])
+def do_generate_loop_start():
+    global loop_started
     try:
+        if loop_started:
+            return "Loop has already started.", 200
+        loop_started = True
         threading.Thread(
-                target = do_generate_until_helper,
-                args = [amount]
+                target = do_generate_loop_helper,
         ).start()
-        return "Started Generation(Asynchronous)", 200
+        return "Started Generation Loop (Asynchronous)", 200
     except Exception as e:
-        return jsonify(e), 500
+        traceback.print_exc()
+        return jsonify(str(e)), 500
 
-def do_generate_until_helper(amount):
+@app.route('/block/generate/loop/stop', methods=['GET'])
+def do_generate_loop_stop():
+    global loop_started
     try:
-        while(blockchain.get_my_account_balance() < amount):
+        loop_started = False
+        return "Stopped Generation Loop", 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(str(e)), 500
+
+def do_generate_loop_helper():
+    global loop_started
+    try:
+        while(loop_started):
             new_block = blockchain.generate_next_block()
     except Exception:
+        traceback.print_exc()
         pass
 
 @app.route('/block/latest', methods=['GET'])
@@ -93,6 +111,7 @@ def do_new_transaction():
     try:
         tx = blockchain.send_transaction(values['recipient'], values['amount'])
     except Exception as e:
+        traceback.print_exc()
         tx = str(e)
 
     return jsonify(tx), 201

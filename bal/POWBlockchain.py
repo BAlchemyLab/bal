@@ -32,7 +32,7 @@ class POWBlockchain(BaseBlockchain):
 
     def is_block_proof_valid(self, block):
         guess_hash = block['hash']
-        difficulty = self.get_difficulty(self.get_blockchain())
+        difficulty = block['difficulty']
         return guess_hash[:difficulty] == "0" * difficulty
 
     def find_block(self, index, previous_hash, transactions, difficulty):
