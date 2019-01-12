@@ -129,7 +129,7 @@ def simulate():
 
         raw_input('Input something to send transactions in 17/06/2011: Phase1: ')
         target_amount = 12
-        transaction_count = 80
+        transaction_count = 8
         print("Sending " + str(transaction_count) + " number of transactions from h11 to h12")
         for i in range(1, transaction_count + 1):
             send_transaction(h11, h12, target_amount/float(transaction_count), True)
