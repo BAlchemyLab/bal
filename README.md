@@ -81,10 +81,6 @@ For raw channel:
 ```bash
 curl -X GET http://localhost:8080/channel/1/1
 ```
-For quantum channel:
-```bash
-curl -X GET http://localhost:8080/channel/1/2
-```
 
 ## More information
 you may find in the project's [Wiki](https://github.com/BAlchemyLab/bal/wiki).

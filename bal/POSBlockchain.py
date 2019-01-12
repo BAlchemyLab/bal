@@ -5,9 +5,6 @@ import hashlib
 from Wallet import get_public_from_wallet
 
 VALIDATING_WITHOUT_COIN = 10
-DIFFICULTY_ADJUSTMENT_INTERVAL = 16 # block number
-BLOCK_GENERATION_INTERVAL = 5 # in seconds
-VALID_TIMESTAMP_INTERVAL = 60 # in seconds
 
 class POSBlockchain(BaseBlockchain):
     def genesis_block(self):

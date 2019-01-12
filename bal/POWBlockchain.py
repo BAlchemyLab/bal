@@ -3,10 +3,6 @@ import numbers
 from time import time
 import hashlib
 
-DIFFICULTY_ADJUSTMENT_INTERVAL = 16 # block number
-BLOCK_GENERATION_INTERVAL = 5 # in seconds
-VALID_TIMESTAMP_INTERVAL = 60 # in seconds
-
 class POWBlockchain(BaseBlockchain):
     def genesis_block(self):
         return self.raw_block(0, 1465154705, '', [self.genesis_transaction()], self.get_initial_difficulty(), 0)

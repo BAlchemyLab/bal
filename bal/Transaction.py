@@ -6,7 +6,7 @@ import json
 import hashlib
 from itertools import chain
 from functools import reduce
-COINBASE_AMOUNT = 10
+COINBASE_AMOUNT = 1
 
 def new_unspent_tx_out(tx_out_id, tx_out_index, address, amount):
     result = {}
@@ -71,6 +71,7 @@ def validate_block_transactions(a_transactions, a_unspent_tx_outs, block_index):
              .flatten()
 
     if has_duplicates(tx_ins):
+        print('has duplicates')
         return False
 
     normal_transactions = a_transactions[1:]
@@ -108,6 +109,7 @@ def validate_tx_in(tx_in, transaction, a_unspent_tx_outs):
 
     if not referenced_u_tx_out:
         print('referenced txOut not found: ' + json.dumps(tx_in))
+        print('current unspents: ' + json.dumps(a_unspent_tx_outs))
         return False
 
     address = referenced_u_tx_out['address']
@@ -161,7 +163,7 @@ def update_unspent_tx_outs(a_transactions, a_unspent_tx_outs):
 def process_transactions(a_transactions, a_unspent_tx_outs, block_index):
     if not validate_block_transactions(a_transactions, a_unspent_tx_outs, block_index):
         print('invalid block transactions')
-        return []
+        return None
 
     return update_unspent_tx_outs(a_transactions, a_unspent_tx_outs)
 

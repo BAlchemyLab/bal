@@ -27,7 +27,7 @@ class BaseBlockchain(object):
         self.p2p = P2P(self, p2p_port)
         self.initial_difficulty = initial_difficulty
         self.chain = [self.genesis_block()]
-        self.unspent_tx_outs = process_transactions(self.chain[0]['transactions'], [], 0)
+        self.unspent_tx_outs = process_transactions(self.chain[0]['transactions'], [], 0) or []
 
     @property
     def unspent_tx_outs(self):
@@ -160,11 +160,14 @@ class BaseBlockchain(object):
     def add_block_to_chain(self, new_block):
         if self.is_valid_block(new_block, self.get_latest_block()):
             ret_val = process_transactions(new_block['transactions'], self.get_unspent_tx_outs(), new_block['index'])
-
-            self.chain.append(new_block)
-            self.unspent_tx_outs = ret_val
-            self.transaction_pool.update_transaction_pool(self.get_unspent_tx_outs())
-            return True
+            if ret_val:
+                self.chain.append(new_block)
+                self.unspent_tx_outs = ret_val
+                self.transaction_pool.update_transaction_pool(self.get_unspent_tx_outs())
+                return True
+            else:
+                print('block has wrong transactions')
+                return False
         else:
             return False
 
