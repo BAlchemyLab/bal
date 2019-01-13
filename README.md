@@ -55,12 +55,12 @@ Mininet's custom setup for BAL classes balmn.py add several types of hosts:
 
 For example:
 ```
-mn --custom=balmn.py --host=btc
+mn --custom=balmn.py --host=pos
 ```
 
-Testing:
+Simulating (under bal/bal directory):
 ```
-./bcmn_test.py [host_type]
+./bcmn_test.py
 ```
 
 **Test with ryu:**

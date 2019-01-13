@@ -12,6 +12,7 @@ from mininet.cli import CLI
 from mininet.node import Host, CPULimitedHost, OVSKernelSwitch
 from mininet.util import specialClass
 from mininet.term import makeTerms
+import bcnode
 
 def simulate():
     net = None
