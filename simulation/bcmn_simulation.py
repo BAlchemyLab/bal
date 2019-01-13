@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import bcnode
 import yaml
 import json
 
@@ -12,12 +11,12 @@ from mininet.cli import CLI
 from mininet.node import Host, CPULimitedHost, OVSKernelSwitch
 from mininet.util import specialClass
 from mininet.term import makeTerms
-import bcnode
+from bal.bcnode import POWNode, POSNode
 
 def simulate():
     net = None
     try:
-        net = Mininet( topo=None, build=False, host=bcnode.POWNode, ipBase='10.0.0.0/8', xterms=True, waitConnected=True)
+        net = Mininet( topo=None, build=False, host=POWNode, ipBase='10.0.0.0/8', xterms=True, waitConnected=True)
 
         h1 = net.addHost('h1', ip='10.0.0.1', defaultRoute=None)
         h2 = net.addHost('h2', ip='10.0.0.2', defaultRoute=None)
