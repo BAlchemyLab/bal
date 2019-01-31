@@ -1,4 +1,4 @@
-**ALL DEVELOPMENT MOVED TO https://balchemylab.gitlab.io**
+**THIS REPOSITORY CLOSED. ALL DEVELOPMENT MOVED TO https://balchemylab.gitlab.io**
 
 # Block[Chain] Alchemy Laboratory Framework
 
