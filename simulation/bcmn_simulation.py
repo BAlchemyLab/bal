@@ -13,10 +13,10 @@ from mininet.util import specialClass
 from mininet.term import makeTerms
 from bal.bcnode import POWNode, POSNode
 
-def simulate():
+def simulate(host_type):
     net = None
     try:
-        net = Mininet( topo=None, build=False, host=POWNode, ipBase='10.0.0.0/8', xterms=True, waitConnected=True)
+        net = Mininet( topo=None, build=False, host=host_type, ipBase='10.0.0.0/8', xterms=True, waitConnected=True)
 
         h1 = net.addHost('h1', ip='10.0.0.1', defaultRoute=None)
         h2 = net.addHost('h2', ip='10.0.0.2', defaultRoute=None)
@@ -190,6 +190,31 @@ if __name__ == '__main__':
     from mininet.cli import CLI
     from mininet.log import setLogLevel
     import shutil
+    import getopt
+
+    host_type = None
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"ht:",["host_type="])
+    except getopt.GetoptError:
+        print 'bcmn_simulation -ht <POW/POS>'
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print 'bcmn_simulation -ht <POW/POS>'
+            sys.exit()
+        elif opt in ("-ht", "--host_type"):
+            if arg == 'POW':
+                host_type = POWNode
+            elif arg == 'POS':
+                host_type = POSNode
+            else:
+                print 'Unknown host type: ' + arg
+                sys.exit()
+        print 'Host Type is "', host_type
+
+    if not host_type:
+        print 'Specify host with -ht <POW/POS>'
+        sys.exit()
 
     tmp_location = '/tmp/bcn'
     if os.path.exists(tmp_location):
@@ -197,4 +222,4 @@ if __name__ == '__main__':
 
     setLogLevel( 'info' )
 
-    simulate()
+    simulate(host_type)

@@ -49,24 +49,5 @@ Simulating (under bal/bal directory):
 ./bcmn_test.py
 ```
 
-**Test with ryu:**
-
-```bash
-sudo mn --custom bal/topo_2sw-2host.py --topo mytopo --mac --controller remote --switch ovs
-```
-
-Go to 'bal' directory and start ryu-manager:
-
-```bash
-cd bal
-sudo ryu-manager rest_forward.py
-```
-
-You can switch channels with RestAPI:
-For raw channel:
-```bash
-curl -X GET http://localhost:8080/channel/1/1
-```
-
 ## More information
 you may find in the project's [Wiki](https://github.com/BAlchemyLab/bal/wiki).
