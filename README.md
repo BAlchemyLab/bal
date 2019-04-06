@@ -27,20 +27,6 @@ $ pip install -r requirements.txt
     '-d', '--difficulty', default=2, help='initial difficulty'
     '-k', '--keystore', default='/tmp/private_key.pem', help='where the keystore is located.'
 
-## Testing
-Internal test:
-```
-python -m unittest tests.test_BaseBlockchain
-```
-
-Test REST API POW:
-1. Run blockchain.py servers on ports 5000 and 5001 with POW variant.
-2. Run test script:
-```
-./tests/test.sh
-```
-
-
 ## Blockchain Mininet network
 To install mininet please follow http://mininet.org/vm-setup-notes/, a fresh mininet virtual environment setup is recommended. For the VM Mininet 2.2.2 on Ubuntu 14.04 LTS - 64 bit follow these steps:
 Clone the project into a directory. `cd` to cloned directory.
@@ -63,25 +49,6 @@ mn --custom=balmn.py --host=pos
 Simulating (under bal/bal directory):
 ```
 ./bcmn_test.py
-```
-
-**Test with ryu:**
-
-```bash
-sudo mn --custom bal/topo_2sw-2host.py --topo mytopo --mac --controller remote --switch ovs
-```
-
-Go to 'bal' directory and start ryu-manager:
-
-```bash
-cd bal
-sudo ryu-manager rest_forward.py
-```
-
-You can switch channels with RestAPI:
-For raw channel:
-```bash
-curl -X GET http://localhost:8080/channel/1/1
 ```
 
 ## More information
