@@ -1,3 +1,5 @@
+**THIS REPOSITORY CLOSED! ALL DEVELOPMENT MOVED TO https://balchemylab.gitlab.io**
+
 # Block[Chain] Alchemy Laboratory Framework
 
 The source code of originally based on post on [Building a Blockchain](https://medium.com/p/117428612f46) of Daniel van Flymen.
