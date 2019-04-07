@@ -3,8 +3,6 @@ from mininet.util import specialClass
 from mininet.topo import SingleSwitchTopo, LinearTopo, SingleSwitchReversedTopo
 from mininet.topolib import TreeTopo
 from bal.bcnode import ( POWNode, POSNode )
-from bal.MyTopo import MyTopo
-
 
 HOSTDEF = 'proc'
 HOSTS = { 'proc': Host,

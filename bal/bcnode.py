@@ -39,7 +39,7 @@ class BCNode( CPULimitedHost):
         CPULimitedHost.__init__( self, name, inNamespace=inNamespace,
                        ip=ip, **params  )
 
-    def start( self ):
+    def start( self, sim_path ):
         """Start <bcnode> <args> on node.
            Log to /tmp/bc_<name>.log"""
         if self.server:
@@ -58,7 +58,8 @@ class BCNode( CPULimitedHost):
                                                port=self.port,
                                                cdir=self.cdir,
                                                sdir=self.sdir,
-                                               socket=self.socket)
+                                               socket=self.socket,
+                                               simulation_path = sim_path)
             debug( cmd + ' 1>' + cout + ' 2>' + cout + ' &' )
             self.cmd( cmd + ' 1>' + cout + ' 2>' + cout + ' &' )
             self.execed = False
@@ -113,7 +114,7 @@ class POWNode(BCNode):
 
     def __init__( self, name, bcclass=None, inNamespace=True,
                   server='blockchain.py',
-                  sargs='-p {port} -s {socket} -d 2 -k {sdir}/{IP}pow.pem',
+                  sargs='-p {port} -s {socket} -d 2 -k {sdir}/{IP}pow.pem -n {name} -sp {simulation_path}',
                   sdir='/tmp/bcn',
                   client='curl',
                   cargs="-s -X {method} http://{IP}:{port}/{command}",
@@ -130,7 +131,7 @@ class POSNode(BCNode):
 
     def __init__( self, name, bcclass=None, inNamespace=True,
                   server='blockchain.py',
-                  sargs='-p {port} -s {socket} -v pos -k {sdir}/{IP}pos.pem',
+                  sargs='-p {port} -s {socket} -v pos -k {sdir}/{IP}pos.pem -n {name} -sp {simulation_path}',
                   sdir='/tmp/bcn',
                   client='curl',
                   cargs="-s -X {method} http://{IP}:{port}/{command}",

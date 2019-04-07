@@ -12,6 +12,11 @@ from mininet.node import Host, CPULimitedHost, OVSKernelSwitch
 from mininet.util import specialClass
 from mininet.term import makeTerms
 from bal.bcnode import POWNode, POSNode
+import os
+from functools import partial
+from mininet.log import setLogLevel
+import shutil
+import getopt
 
 def simulate(host_type):
     net = None
@@ -153,7 +158,7 @@ def send_transaction(from_host, to_host, amount, silent = False):
 
 def register_peers(from_host, to_host):
     peer_param = '{"peer": "%s:%s"}' % (to_host.IP(), to_host.socket)
-    from_host.call('peers/register', False, peer_param)
+    from_host.call('peers/register', True, peer_param)
 
 def wait_and_forge_transactions(verifier, transaction_number):
     current_transaction_pool = yaml.safe_load(verifier.call('transactions/pool', True))
@@ -181,17 +186,7 @@ def open_mininet_cli(net):
     print('Opening Mininet CLI before changing current topology (Closing CLI will resume the script)')
     result=CLI(net)
 
-if __name__ == '__main__':
-    import sys
-    import os
-    from functools import partial
-
-    from mininet.net import Mininet
-    from mininet.cli import CLI
-    from mininet.log import setLogLevel
-    import shutil
-    import getopt
-
+def main():
     host_type = None
     try:
         opts, args = getopt.getopt(sys.argv[1:],"ht:",["host_type="])
@@ -211,15 +206,14 @@ if __name__ == '__main__':
                 print 'Unknown host type: ' + arg
                 sys.exit()
         print 'Host Type is "', host_type
-
     if not host_type:
         print 'Specify host with -ht <POW/POS>'
         sys.exit()
-
     tmp_location = '/tmp/bcn'
     if os.path.exists(tmp_location):
         shutil.rmtree('/tmp/bcn')
-
     setLogLevel( 'info' )
-
     simulate(host_type)
+
+if __name__ == '__main__':
+    main()

@@ -3,8 +3,10 @@ import numbers
 from time import time
 import hashlib
 from Wallet import get_public_from_wallet
+from Transaction import COINBASE_AMOUNT
 
 VALIDATING_WITHOUT_COIN = 10
+NO_STAKE_HELP_RATE = 10.0
 
 class POSBlockchain(BaseBlockchain):
     def genesis_block(self):
@@ -36,8 +38,12 @@ class POSBlockchain(BaseBlockchain):
             balance = block['staker_balance'] + 1
         else:
             balance = block['staker_balance']
+            if balance == 0:
+                stake_helper = COINBASE_AMOUNT / NO_STAKE_HELP_RATE
+                balance = stake_helper
 
-        balance_over_difficulty = (2**256) * balance/difficulty
+
+        balance_over_difficulty = (2**256) * balance/(difficulty * 1.0)
         previous_hash = block['previous_hash']
         staker_address = block['staker_address']
         timestamp = block['timestamp']

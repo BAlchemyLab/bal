@@ -6,6 +6,9 @@ from flask import Flask, jsonify, request
 from POWBlockchain import POWBlockchain
 from POSBlockchain import POSBlockchain
 
+from POWBlockchainSimulation import POWBlockchainSimulation
+from POSBlockchainSimulation import POSBlockchainSimulation
+
 from Transaction import new_transaction
 from TransactionPool import TransactionPool
 from Wallet import init_wallet, get_public_from_wallet
@@ -146,16 +149,27 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--variant', default='pow', help='variant of blockchain "pow" or "pos"')
     parser.add_argument('-d', '--difficulty', default=4, type=int, help='initial difficulty')
     parser.add_argument('-k', '--keystore', default='/tmp/private_key.pem', help='where the keystore located. default: private_key.pem')
+    parser.add_argument('-sp', '--simulationpath', default='', help='specifies if it is a simulation run and where simulation logs will be kept.')
+    parser.add_argument('-n', '--name', default='bc', help='specifies blockchain node name(mostly for simulations)')
+
+
 
     args = parser.parse_args()
     port = args.port
     dbfile = args.database
     p2p_port = args.socket
     initial_difficulty = args.difficulty
-    if args.variant.find('pos') == 0:
-        blockchain = POSBlockchain(p2p_port, initial_difficulty)
+    simulation_path = args.simulationpath
+    if simulation_path != '':
+        if args.variant.find('pos') == 0:
+            blockchain = POSBlockchainSimulation(p2p_port, initial_difficulty, simulation_path, args.name)
+        else:
+            blockchain = POWBlockchainSimulation(p2p_port, initial_difficulty, simulation_path, args.name)
     else:
-        blockchain = POWBlockchain(p2p_port, initial_difficulty)
+        if args.variant.find('pos') == 0:
+            blockchain = POSBlockchain(p2p_port, initial_difficulty)
+        else:
+            blockchain = POWBlockchain(p2p_port, initial_difficulty)
 
     if dbfile:
         print("DB: " + dbfile)
