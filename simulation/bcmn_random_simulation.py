@@ -91,6 +91,7 @@ def simulate(host_type, host_number, miner_percentage):
     elapsed_time = time() - start_time
     dump_elapsed_time(elapsed_time, ts_dir_path)
     dump_chain(verifier, ts_dir_path)
+    net.stop()
 
 def send_and_log_transaction(from_host, to_host, amount, dir_path):
     send_transaction(from_host,to_host,amount)
