@@ -22,9 +22,11 @@ def ran( k ):
     return random.randint(0, k-1)
 
 def random_connected_graph(v, e, w):
+
     adj_matrix = [0] * v * v
     tree = [0] * v
     init_array(tree, v)
+
     tree = permute(tree)
 
     for i in range(1, v):
@@ -51,8 +53,13 @@ def random_connected_graph(v, e, w):
     return adj_matrix
 
 def permute(arr):
-    perm_list = list(itertools.permutations(arr))
-    return random.choice(perm_list)
+    return random_permutation(arr)
+
+def random_permutation(iterable, r=None):
+    "Random selection from itertools.permutations(iterable, r)"
+    pool = tuple(iterable)
+    r = len(pool) if r is None else r
+    return tuple(random.sample(pool, r))
 
 def init_array(arr, end):
    for i in range(0, end):
@@ -60,9 +67,7 @@ def init_array(arr, end):
 
 def random_topology(switch_number, host_number, max_bw, net_params):
     link_number = ran(switch_number * (switch_number-1)/2)
-
     adj_matrix = random_connected_graph(switch_number, link_number, max_bw)
-
     net = Mininet(**net_params)
     switches = [None] * switch_number
     for i in range(0, switch_number):
