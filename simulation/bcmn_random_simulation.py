@@ -29,69 +29,74 @@ from bcmn_simulation import *
 flatten = itertools.chain.from_iterable
 
 def simulate(host_type, host_number, miner_percentage):
-    start_time = time()
-    timestamp_str = str(int(start_time))
-    net_params = {'topo': None, 'build': False, 'host': host_type, 'switch': OVSKernelSwitch,
-                    'link': TCLink, 'ipBase': '10.0.0.0/8', 'waitConnected' : True}
+    net = None
+    try:
+        start_time = time()
+        timestamp_str = str(int(start_time))
+        net_params = {'topo': None, 'build': False, 'host': host_type, 'switch': OVSKernelSwitch,
+                        'link': TCLink, 'ipBase': '10.0.0.0/8', 'waitConnected' : True, 'xterms': True}
 
-    switch_number = host_number / 4
-    max_bw = 100
+        switch_number = host_number / 4
+        max_bw = 100
 
-    net = rtg.random_topology(switch_number, host_number, max_bw, net_params)
-    net.build()
-    net.start()
+        net = rtg.random_topology(switch_number, host_number, max_bw, net_params)
+        net.build()
+        net.start()
 
-    verifier = random.choice(net.hosts)
-    parametered_path = 'h' + str(host_number) + 'm' + str(miner_percentage)
-    ts_dir_path = init_simulation_path('/tmp/' + parametered_path + '/' + timestamp_str + '/')
+        verifier = random.choice(net.hosts)
+        parametered_path = 'h' + str(host_number) + 'm' + str(miner_percentage)
+        ts_dir_path = init_simulation_path('/tmp/' + parametered_path + '/' + timestamp_str + '/')
 
-    for node in net.hosts:
-        node.start(ts_dir_path)
+        for node in net.hosts:
+            node.start(ts_dir_path)
 
-    sleep(2) # Wait for nodes to be started completely.
+        sleep(2) # Wait for nodes to be started completely.
 
-    peer_topology = register_peer_topology(net)
+        peer_topology = register_peer_topology(net)
 
-    target_amount = 10
-    for node in net.hosts:
-        node.call('block/generate/loop/start', True)
+        target_amount = 10
+        for node in net.hosts:
+            node.call('block/generate/loop/start', True)
 
-    print("Waiting for block generations for initial target amounts.")
-    generated = []
-    while len(generated) != len(net.hosts):
-        sleep(BLOCK_GENERATION_INTERVAL)
-        print('***** AMOUNT CONTROL *****')
-        for h in net.hosts:
-            if h.name in generated:
-                continue
-            host_amount = verifier_check_amount(h, verifier)
-            print(h.name + ' has ' + str(host_amount) + ' coins currently, target is: ' + str(target_amount))
-            if (host_amount >= target_amount):
-                print(h.name + ' has enough coins, stopping generation for it')
-                h.call('block/generate/loop/stop', True)
-                generated.append(h.name)
+        print("Waiting for block generations for initial target amounts.")
+        generated = []
+        while len(generated) != len(net.hosts):
+            sleep(BLOCK_GENERATION_INTERVAL)
+            print('***** AMOUNT CONTROL *****')
+            for h in net.hosts:
+                if h.name in generated:
+                    continue
+                host_amount = verifier_check_amount(h, verifier)
+                print(h.name + ' has ' + str(host_amount) + ' coins currently, target is: ' + str(target_amount))
+                if (host_amount >= target_amount):
+                    print(h.name + ' has enough coins, stopping generation for it')
+                    h.call('block/generate/loop/stop', True)
+                    generated.append(h.name)
 
-    miner_number = len(net.hosts)*miner_percentage / 100
-    miners = random.sample(net.hosts, miner_number)
+        miner_number = len(net.hosts)*miner_percentage / 100
+        miners = random.sample(net.hosts, miner_number)
 
-    for miner in miners:
-        miner.call('block/generate/loop/start', True)
+        for miner in miners:
+            miner.call('block/generate/loop/start', True)
 
-    sleep(2)
-    sender, receiver = random.sample(net.hosts, 2)
-    send_and_log_transaction(sender, receiver, 1, ts_dir_path)
+        sleep(2)
+        sender, receiver = random.sample(net.hosts, 2)
+        send_and_log_transaction(sender, receiver, 1, ts_dir_path)
 
-    dump_net(net, peer_topology, miners, ts_dir_path)
+        dump_net(net, peer_topology, miners, ts_dir_path)
 
-    while not check_block_txts(ts_dir_path, host_number, 1):
-        sleep(0.5)
+        while not check_block_txts(ts_dir_path, host_number, 1):
+            sleep(0.5)
 
-    sleep(2)
+        sleep(2)
 
-    elapsed_time = time() - start_time
-    dump_elapsed_time(elapsed_time, ts_dir_path)
-    dump_chain(verifier, ts_dir_path)
-    net.stop()
+        elapsed_time = time() - start_time
+        dump_elapsed_time(elapsed_time, ts_dir_path)
+        dump_chain(verifier, ts_dir_path)
+        net.stop()
+    except:
+        open_mininet_cli(net)
+        net.stop()
 
 def send_and_log_transaction(from_host, to_host, amount, dir_path):
     send_transaction(from_host,to_host,amount)
