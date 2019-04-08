@@ -23,6 +23,7 @@ from functools import partial
 from mininet.log import setLogLevel
 import shutil
 import getopt
+import traceback
 from bcmn_simulation import *
 
 
@@ -52,7 +53,11 @@ def simulate(host_type, host_number, miner_percentage):
 
         sleep(2) # Wait for nodes to be started completely.
 
-        peer_topology = register_peer_topology(net)
+        peer_topology = register_peer_topology(net)    
+        miner_number = len(net.hosts)*miner_percentage / 100
+        miners = random.sample(net.hosts, miner_number)
+
+        dump_net(net, peer_topology, miners, ts_dir_path)
 
         target_amount = 10
         for node in net.hosts:
@@ -73,17 +78,12 @@ def simulate(host_type, host_number, miner_percentage):
                     h.call('block/generate/loop/stop', True)
                     generated.append(h.name)
 
-        miner_number = len(net.hosts)*miner_percentage / 100
-        miners = random.sample(net.hosts, miner_number)
-
         for miner in miners:
             miner.call('block/generate/loop/start', True)
 
         sleep(2)
         sender, receiver = random.sample(net.hosts, 2)
         send_and_log_transaction(sender, receiver, 1, ts_dir_path)
-
-        dump_net(net, peer_topology, miners, ts_dir_path)
 
         while not check_block_txts(ts_dir_path, host_number, 1):
             sleep(0.5)
@@ -97,6 +97,7 @@ def simulate(host_type, host_number, miner_percentage):
     except:
         open_mininet_cli(net)
         net.stop()
+        traceback.print_exc()
 
 def send_and_log_transaction(from_host, to_host, amount, dir_path):
     send_transaction(from_host,to_host,amount)
