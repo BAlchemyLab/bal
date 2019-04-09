@@ -27,7 +27,7 @@ class POWBlockchainSimulation(POWBlockchain):
         ts = time()
         transactions = block['transactions']
         if len(transactions) > 1:
-            for tx in transactions:
+            for tx in transactions[1:]:
                 tx_id = tx['id']
                 with open(self.path + 'transaction_block-'+tx_id+'.txt', 'w') as file:
                     file.write(self.name + '---'+ 'sending tx with block' + '---' + str(ts))

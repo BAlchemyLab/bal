@@ -28,21 +28,22 @@ from bcmn_simulation import *
 
 flatten = itertools.chain.from_iterable
 
-def simulate(host_type):
+def simulate(host_type, host_number, miner_percentage):
+    start_time = time()
+    timestamp_str = str(int(start_time))
     net_params = {'topo': None, 'build': False, 'host': host_type, 'switch': OVSKernelSwitch,
                     'link': TCLink, 'ipBase': '10.0.0.0/8', 'waitConnected' : True}
-    switch_number = 4
-    host_number = 10
+
+    switch_number = host_number / 4
     max_bw = 100
-    miner_percentage = 20
 
     net = rtg.random_topology(switch_number, host_number, max_bw, net_params)
     net.build()
     net.start()
 
     verifier = random.choice(net.hosts)
-
-    ts_dir_path = init_simulation_path('/tmp')
+    parametered_path = 'h' + str(host_number) + 'm' + str(miner_percentage)
+    ts_dir_path = init_simulation_path('/tmp/' + parametered_path + '/' + timestamp_str + '/')
 
     for node in net.hosts:
         node.start(ts_dir_path)
@@ -50,9 +51,6 @@ def simulate(host_type):
     sleep(2) # Wait for nodes to be started completely.
 
     peer_topology = register_peer_topology(net)
-    miner_number = len(net.hosts)*miner_percentage / 100
-    miners = random.sample(net.hosts, miner_number)
-    dump_net(net, peer_topology, miners, ts_dir_path)
 
     target_amount = 10
     for node in net.hosts:
@@ -73,12 +71,26 @@ def simulate(host_type):
                 h.call('block/generate/loop/stop', True)
                 generated.append(h.name)
 
+    miner_number = len(net.hosts)*miner_percentage / 100
+    miners = random.sample(net.hosts, miner_number)
+
     for miner in miners:
         miner.call('block/generate/loop/start', True)
 
+    sleep(2)
     sender, receiver = random.sample(net.hosts, 2)
     send_and_log_transaction(sender, receiver, 1, ts_dir_path)
-    open_mininet_cli(net)
+
+    dump_net(net, peer_topology, miners, ts_dir_path)
+
+    while not check_block_txts(ts_dir_path, host_number, 1):
+        sleep(0.5)
+
+    sleep(2)
+
+    elapsed_time = time() - start_time
+    dump_elapsed_time(elapsed_time, ts_dir_path)
+    dump_chain(verifier, ts_dir_path)
 
 def send_and_log_transaction(from_host, to_host, amount, dir_path):
     send_transaction(from_host,to_host,amount)
@@ -132,6 +144,15 @@ def register_peer_topology(net):
 
     return peers_by_switch + list(peers_by_max_bw)
 
+def dump_chain(host, dir_path):
+    with open(dir_path + 'chain.txt', 'w') as file:  # Use file to refer to the file object
+        file.write(host.call('chain', True))
+
+def dump_elapsed_time(elapsed_time, dir_path):
+    with open(dir_path + 'activity.txt', 'a+') as file:  # Use file to refer to the file object
+        file.write('Elapsed time for simulation(in sec):' + str(elapsed_time))
+        file.write('\n')
+
 def dump_net(net, peer_topology, miners, dir_path):
     with open(dir_path + 'dump.txt', 'w') as file:  # Use file to refer to the file object
         for node in net.switches + net.hosts:
@@ -158,12 +179,23 @@ def dump_net(net, peer_topology, miners, dir_path):
             file.write(miner.name)
             file.write('\n')
 
-def init_simulation_path(root_path):
-    timestamp_str = str(int(time()))
-    ts_dir_path = root_path + '/simulation_' + timestamp_str + '/'
-    if not os.path.exists(ts_dir_path):
-        os.makedirs(ts_dir_path)
-    return ts_dir_path
+def init_simulation_path(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+def check_block_txts(dir_path, host_number, tx_number):
+    block_txts = [filename for filename in os.listdir(dir_path) if filename.startswith("transaction_block")]
+    if (not block_txts) or tx_number != len(block_txts):
+        return False
+
+    for txt in block_txts:
+        count = 0
+        with open(dir_path + txt) as f:
+            count = len(f.read().split(b'\n')) - 1
+        if count != host_number:
+            return False
+    return True
 
 def main():
     host_type = None
@@ -184,7 +216,7 @@ def main():
             else:
                 print 'Unknown host type: ' + arg
                 sys.exit()
-        print 'Host Type is "', host_type
+
     if not host_type:
         print 'Specify host with -ht <POW/POS>'
         sys.exit()
@@ -192,7 +224,9 @@ def main():
     if os.path.exists(tmp_location):
         shutil.rmtree('/tmp/bcn')
     setLogLevel( 'info' )
-    simulate(host_type)
+    host_number = int(input("Number of hosts(>4):"))
+    miner_percentage = int(input("Miner percentage (0-100):"))
 
+    simulate(host_type, host_number, miner_percentage)
 if __name__ == '__main__':
     main()
