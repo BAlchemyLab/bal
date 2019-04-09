@@ -66,15 +66,15 @@ def init_array(arr, end):
       arr[i] = i
 
 def random_topology(switch_number, host_number, max_bw, net_params):
-    link_number = ran(switch_number * (switch_number-1)/2)
+    link_number = 1 #too much link number makes mininet crash
     adj_matrix = random_connected_graph(switch_number, link_number, max_bw)
     net = Mininet(**net_params)
     switches = [None] * switch_number
-    for i in range(0, switch_number):
-      switches[i] = net.addSwitch('s' + str(i + 1), failMode = 'standalone')
+    for i in range(1, switch_number+1):
+      switches[i-1] = net.addSwitch('s' + str(i), failMode = 'standalone')
 
-    for i in range(0, host_number):
-        host = net.addHost('h'+ str(i + 1), defaultRoute=None)
+    for i in range(1, host_number+1):
+        host = net.addHost('h'+ str(i), defaultRoute=None)
         selected_sw = random.choice(switches)
         ran_bw = ran(max_bw)+1
         net.addLink(selected_sw, host, bw=ran_bw)
@@ -98,5 +98,6 @@ if __name__ == '__main__':
                     'ipBase': '10.0.0.0/8', 'waitConnected' : True}
     net = random_topology(n, h, max_bw, net_params)
     net.build()
+    net.start()
     CLI( net )
     net.stop()
