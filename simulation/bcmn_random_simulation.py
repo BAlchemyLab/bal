@@ -24,12 +24,13 @@ from mininet.log import setLogLevel
 import shutil
 import getopt
 import traceback
+from argparse import ArgumentParser
 from bcmn_simulation import *
 
 
 flatten = itertools.chain.from_iterable
 
-def simulate(host_type, host_number, miner_percentage):
+def simulate(host_type, host_number, miner_percentage, root_path):
     net = None
     try:
         start_time = time()
@@ -46,14 +47,14 @@ def simulate(host_type, host_number, miner_percentage):
 
         verifier = random.choice(net.hosts)
         parametered_path = 'h' + str(host_number) + 'm' + str(miner_percentage)
-        ts_dir_path = init_simulation_path('/tmp/' + parametered_path + '/' + timestamp_str + '/')
+        ts_dir_path = init_simulation_path(root_path + parametered_path + '/' + timestamp_str + '/')
 
         for node in net.hosts:
             node.start(ts_dir_path)
 
         sleep(2) # Wait for nodes to be started completely.
 
-        peer_topology = register_peer_topology(net)    
+        peer_topology = register_peer_topology(net)
         miner_number = len(net.hosts)*miner_percentage / 100
         miners = random.sample(net.hosts, miner_number)
 
@@ -206,34 +207,24 @@ def check_block_txts(dir_path, host_number, tx_number):
 
 def main():
     host_type = None
-    try:
-        opts, args = getopt.getopt(sys.argv[1:],"ht:",["host_type="])
-    except getopt.GetoptError:
-        print 'bcmn_simulation -ht <POW/POS>'
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print 'bcmn_simulation -ht <POW/POS>'
-            sys.exit()
-        elif opt in ("-ht", "--host_type"):
-            if arg == 'POW':
-                host_type = POWNode
-            elif arg == 'POS':
-                host_type = POSNode
-            else:
-                print 'Unknown host type: ' + arg
-                sys.exit()
-
-    if not host_type:
-        print 'Specify host with -ht <POW/POS>'
-        sys.exit()
+    parser = ArgumentParser()
+    parser.add_argument('-ht', '--host_type', default='pow', type=str, help='blockchain consensus class to be used')
+    parser.add_argument('-p', '--path', default='/tmp/', type=str, help='where the logs will be located. default: /tmp/')
+    args = parser.parse_args()
     tmp_location = '/tmp/bcn'
     if os.path.exists(tmp_location):
         shutil.rmtree('/tmp/bcn')
     setLogLevel( 'info' )
+
+    if args.host_type.find('pos') == 0:
+        host_type = POSNode
+    else:
+        host_type = POWNode
+
     host_number = int(input("Number of hosts(>4):"))
     miner_percentage = int(input("Miner percentage (0-100):"))
 
-    simulate(host_type, host_number, miner_percentage)
+    simulate(host_type, host_number, miner_percentage, args.path)
+
 if __name__ == '__main__':
     main()
