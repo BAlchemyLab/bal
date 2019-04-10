@@ -11,7 +11,7 @@ from POSBlockchainSimulation import POSBlockchainSimulation
 
 from Transaction import new_transaction
 from TransactionPool import TransactionPool
-from Wallet import init_wallet, get_public_from_wallet
+from Wallet import init_wallet, get_public_from_wallet, get_private_from_wallet, create_transaction
 
 import threading
 import yaml
@@ -116,9 +116,19 @@ def do_new_transaction():
     except Exception as e:
         traceback.print_exc()
         tx = str(e)
+        return jsonify(tx), 200
 
-    return jsonify(tx), 201
+    return jsonify(tx), 200
 
+@app.route('/transactions/has_amount/<int:amount>', methods=['GET'])
+def do_has_amount_for_transaction(amount):
+    try:
+        create_transaction(get_public_from_wallet(), amount, get_private_from_wallet(), blockchain.get_unspent_tx_outs(), blockchain.transaction_pool.get_transaction_pool())
+        return jsonify(True), 200
+    except Exception as e:
+        traceback.print_exc()
+        tx = str(e)
+        return jsonify(False), 200
 
 @app.route('/chain', methods=['GET'])
 def do_full_chain():
@@ -151,8 +161,6 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--keystore', default='/tmp/private_key.pem', help='where the keystore located. default: private_key.pem')
     parser.add_argument('-sp', '--simulationpath', default='', help='specifies if it is a simulation run and where simulation logs will be kept.')
     parser.add_argument('-n', '--name', default='bc', help='specifies blockchain node name(mostly for simulations)')
-
-
 
     args = parser.parse_args()
     port = args.port

@@ -15,7 +15,7 @@ from TransactionPool import TransactionPool
 from Wallet import create_transaction, find_unspent_tx_outs, get_balance, get_private_from_wallet, get_public_from_wallet
 
 DIFFICULTY_ADJUSTMENT_INTERVAL = 16 # block number
-BLOCK_GENERATION_INTERVAL = 5 # in seconds
+BLOCK_GENERATION_INTERVAL = 2 # in seconds
 VALID_TIMESTAMP_INTERVAL = 60 # in seconds
 
 class BaseBlockchain(object):

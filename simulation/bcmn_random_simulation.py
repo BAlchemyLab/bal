@@ -30,7 +30,7 @@ from bcmn_simulation import *
 
 flatten = itertools.chain.from_iterable
 
-def simulate(host_type, host_number, miner_percentage, root_path):
+def simulate(host_type, host_number, miner_percentage, number_of_transactions, root_path):
     net = None
     try:
         start_time = time()
@@ -60,7 +60,7 @@ def simulate(host_type, host_number, miner_percentage, root_path):
 
         dump_net(net, peer_topology, miners, ts_dir_path)
 
-        target_amount = 10
+        target_amount = 2
         for node in net.hosts:
             node.call('block/generate/loop/start', True)
 
@@ -78,33 +78,40 @@ def simulate(host_type, host_number, miner_percentage, root_path):
                     print(h.name + ' has enough coins, stopping generation for it')
                     h.call('block/generate/loop/stop', True)
                     generated.append(h.name)
-
+        sleep(2)
         for miner in miners:
             miner.call('block/generate/loop/start', True)
 
-        sleep(2)
-        sender, receiver = random.sample(net.hosts, 2)
-        send_and_log_transaction(sender, receiver, 1, ts_dir_path)
+        i = 0
+        while i < number_of_transactions:
+            sender, receiver = random.sample(net.hosts, 2)
+            if send_and_log_transaction(sender, receiver, 1, ts_dir_path):
+                i = i + 1
+                sleep(1)
 
-        while not check_block_txts(ts_dir_path, host_number, 1):
+        while not check_block_txts(ts_dir_path, host_number, number_of_transactions):
             sleep(0.5)
-
-        sleep(2)
 
         elapsed_time = time() - start_time
         dump_elapsed_time(elapsed_time, ts_dir_path)
         dump_chain(verifier, ts_dir_path)
         net.stop()
     except:
-        open_mininet_cli(net)
-        net.stop()
+        if net:
+            open_mininet_cli(net)
+            net.stop()
         traceback.print_exc()
 
 def send_and_log_transaction(from_host, to_host, amount, dir_path):
-    send_transaction(from_host,to_host,amount)
-    with open(dir_path + 'activity.txt', 'a+') as file:  # Use file to refer to the file object
-        file.write(from_host.name + ' sends transaction to ' + to_host.name + ' amount: ' + str(amount))
-        file.write('\n')
+    is_tx_creatable = yaml.safe_load(from_host.call('transactions/has_amount/'+str(amount), silent=True))
+    if is_tx_creatable:
+        send_transaction(from_host,to_host,amount)
+        with open(dir_path + 'activity.txt', 'a+') as file:  # Use file to refer to the file object
+            file.write(from_host.name + ' sends transaction to ' + to_host.name + ' amount: ' + str(amount))
+            file.write('\n')
+        return True
+    else:
+        return False
 
 def get_switch_map(net):
     switch_map = defaultdict(lambda: defaultdict(dict))
@@ -194,7 +201,7 @@ def init_simulation_path(path):
 
 def check_block_txts(dir_path, host_number, tx_number):
     block_txts = [filename for filename in os.listdir(dir_path) if filename.startswith("transaction_block")]
-    if (not block_txts) or tx_number != len(block_txts):
+    if (not block_txts) or len(block_txts) < tx_number:
         return False
 
     for txt in block_txts:
@@ -221,10 +228,12 @@ def main():
     else:
         host_type = POWNode
 
-    host_number = int(input("Number of hosts(>4):"))
+    host_number = int(input("Number of hosts(>10):"))
     miner_percentage = int(input("Miner percentage (0-100):"))
-
-    simulate(host_type, host_number, miner_percentage, args.path)
+    number_of_transactions = int(input("Number of repeated random transactions:"))
+    number_of_simulations = int(input("Number of repeated simulations:"))
+    for i in range(0, number_of_simulations):
+        simulate(host_type, host_number, miner_percentage, number_of_transactions, args.path)
 
 if __name__ == '__main__':
     main()

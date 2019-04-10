@@ -154,7 +154,6 @@ def send_transaction(from_host, to_host, amount, silent = False):
     to_host_addr = yaml.safe_load(to_host.call('address/my', True))['address']
     transaction_param = '{"recipient": "%s", "amount": %f}' % (to_host_addr, amount)
     from_host.call('transactions/send', silent, transaction_param)
-    sleep(2)
 
 def register_peers(from_host, to_host):
     peer_param = '{"peer": "%s:%s"}' % (to_host.IP(), to_host.socket)
