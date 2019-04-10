@@ -229,6 +229,7 @@ def main():
     parser.add_argument('-ht', '--host_type', default='pow', type=str, help='blockchain consensus class to be used')
     parser.add_argument('-p', '--path', default='/tmp/', type=str, help='where the logs will be located. default: /tmp/')
     parser.add_argument('-d', '--debug', default=False, help='debug mode for xterms.', action='store_true')
+    parser.add_argument('-s', '--setup', default=False, help='go with setup mode for h=10,20,50,100 m=10,20,50,80 tx=10, sim=10', action='store_true')
     args = parser.parse_args()
     tmp_location = '/tmp/bcn'
     if os.path.exists(tmp_location):
@@ -240,12 +241,22 @@ def main():
     else:
         host_type = POWNode
 
-    host_number = int(input("Number of hosts(>10):"))
-    miner_percentage = int(input("Miner percentage (0-100):"))
-    number_of_transactions = int(input("Number of repeated random transactions:"))
-    number_of_simulations = int(input("Number of repeated simulations:"))
-    for i in range(0, number_of_simulations):
-        simulate(host_type, host_number, miner_percentage, number_of_transactions, args.path, args.debug)
+    if args.setup:
+        host_numbers = [10, 20, 50, 100]
+        miner_percentages = [10,20,50,80]
+        number_of_transactions = 10
+        number_of_simulations = 10
+        for pair in itertools.product(host_numbers, miner_percentages):
+            for i in range(0, number_of_simulations):
+                simulate(host_type, pair[0], pair[1], number_of_transactions, args.path, args.debug)
+
+    else:
+        host_number = int(input("Number of hosts(>10):"))
+        miner_percentage = int(input("Miner percentage (0-100):"))
+        number_of_transactions = int(input("Number of repeated random transactions:"))
+        number_of_simulations = int(input("Number of repeated simulations:"))
+        for i in range(0, number_of_simulations):
+            simulate(host_type, host_number, miner_percentage, number_of_transactions, args.path, args.debug)
 
 if __name__ == '__main__':
     main()

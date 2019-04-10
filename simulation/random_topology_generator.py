@@ -74,9 +74,10 @@ def random_topology(switch_number, host_number, max_bw, net_params):
       switches[i-1] = net.addSwitch('s' + str(i), failMode = 'standalone')
 
     for i in range(1, host_number+1):
-        host = net.addHost('h'+ str(i), defaultRoute=None)
-        selected_sw = random.choice(switches)
         ran_bw = ran(max_bw)+1
+        cpu_f = (ran_bw*1.0 / max_bw)
+        host = net.addHost('h'+ str(i), defaultRoute=None, cpu=cpu_f)
+        selected_sw = random.choice(switches)
         net.addLink(selected_sw, host, bw=ran_bw)
 
     for i in range (1, switch_number):
