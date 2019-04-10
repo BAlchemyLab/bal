@@ -91,7 +91,6 @@ def do_generate_loop_helper():
             new_block = blockchain.generate_next_block()
     except Exception:
         traceback.print_exc()
-        pass
 
 @app.route('/block/latest', methods=['GET'])
 def do_latest_block():

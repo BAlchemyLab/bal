@@ -55,7 +55,8 @@ def simulate(host_type, host_number, miner_percentage, number_of_transactions, r
         sleep(2) # Wait for nodes to be started completely.
 
         peer_topology = register_peer_topology(net)
-        miner_number = len(net.hosts)*miner_percentage / 100
+        miner_number = (len(net.hosts)*miner_percentage / 100)
+
         miners = random.sample(net.hosts, miner_number)
 
         dump_net(net, peer_topology, miners, ts_dir_path)
@@ -78,7 +79,7 @@ def simulate(host_type, host_number, miner_percentage, number_of_transactions, r
                     print(h.name + ' has enough coins, stopping generation for it')
                     h.call('block/generate/loop/stop', True)
                     generated.append(h.name)
-        sleep(2)
+
         for miner in miners:
             miner.call('block/generate/loop/start', True)
 
@@ -89,6 +90,7 @@ def simulate(host_type, host_number, miner_percentage, number_of_transactions, r
                 i = i + 1
                 sleep(1)
 
+        print('Waiting for nodes to receive transactions')
         while not check_block_txts(ts_dir_path, host_number, number_of_transactions):
             sleep(0.5)
 
@@ -96,6 +98,7 @@ def simulate(host_type, host_number, miner_percentage, number_of_transactions, r
         dump_elapsed_time(elapsed_time, ts_dir_path)
         dump_chain(verifier, ts_dir_path)
         net.stop()
+        move_txs_to_directories(ts_dir_path)
     except:
         if net:
             open_mininet_cli(net)
@@ -201,16 +204,23 @@ def init_simulation_path(path):
 
 def check_block_txts(dir_path, host_number, tx_number):
     block_txts = [filename for filename in os.listdir(dir_path) if filename.startswith("transaction_block")]
-    if (not block_txts) or len(block_txts) < tx_number:
+    if (not block_txts) or len(block_txts) < tx_number * host_number:
         return False
-
-    for txt in block_txts:
-        count = 0
-        with open(dir_path + txt) as f:
-            count = len(f.read().split(b'\n')) - 1
-        if count != host_number:
-            return False
     return True
+
+def move_txs_to_directories(dir_path):
+    move_txs_to_directories_helper(dir_path, "transaction_block")
+    move_txs_to_directories_helper(dir_path, "transaction_pool")
+
+def move_txs_to_directories_helper(dir_path, file_prefix):
+    block_txts = [filename for filename in os.listdir(dir_path) if filename.startswith(file_prefix)]
+    for txt in block_txts:
+        tx_hash = txt.rsplit('-', 2)
+        txt_dir_path = dir_path + txt.rpartition('-')[0] + '/'
+        if not os.path.exists(txt_dir_path):
+            os.makedirs(txt_dir_path)
+        os.rename(dir_path + txt, txt_dir_path + txt.rpartition('-')[2])
+
 
 def main():
     host_type = None
