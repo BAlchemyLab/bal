@@ -17,6 +17,7 @@ import threading
 import yaml
 import json
 import traceback
+import time
 app = Flask(__name__)
 
 
@@ -88,7 +89,8 @@ def do_generate_loop_helper():
     global loop_started
     try:
         while(loop_started):
-            new_block = blockchain.generate_next_block()
+            blockchain.generate_next_block()
+            time.sleep(1)
     except Exception:
         traceback.print_exc()
 

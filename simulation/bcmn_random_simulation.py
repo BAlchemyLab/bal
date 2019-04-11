@@ -213,14 +213,15 @@ def move_txs_to_directories(dir_path):
     move_txs_to_directories_helper(dir_path, "transaction_pool")
 
 def move_txs_to_directories_helper(dir_path, file_prefix):
-    block_txts = [filename for filename in os.listdir(dir_path) if filename.startswith(file_prefix)]
-    for txt in block_txts:
-        tx_hash = txt.rsplit('-', 2)
-        txt_dir_path = dir_path + txt.rpartition('-')[0] + '/'
-        if not os.path.exists(txt_dir_path):
-            os.makedirs(txt_dir_path)
-        os.rename(dir_path + txt, txt_dir_path + txt.rpartition('-')[2])
-
+    filenames = [filename for filename in os.listdir(dir_path) if filename.startswith(file_prefix)]
+    new_path = dir_path + file_prefix + '/'
+    init_simulation_path(new_path)
+    for fname in filenames:
+        tx_hash = fname.rsplit('-',2)[1]
+        with open(new_path + tx_hash + '.txt' , 'a+') as outfile:
+                with open(dir_path + fname) as infile:
+                    outfile.write(infile.read())
+                os.remove(dir_path + fname)
 
 def main():
     host_type = None

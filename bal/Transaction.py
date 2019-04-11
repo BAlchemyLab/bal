@@ -109,7 +109,6 @@ def validate_tx_in(tx_in, transaction, a_unspent_tx_outs):
 
     if not referenced_u_tx_out:
         print('referenced txOut not found: ' + json.dumps(tx_in))
-        print('current unspents: ' + json.dumps(a_unspent_tx_outs))
         return False
 
     address = referenced_u_tx_out['address']
@@ -139,16 +138,14 @@ def sign_tx_in(transaction, tx_in_index, private_key, unspent_tx_outs):
     tx_to_sign = transaction['id']
     referenced_unspent_tx_out = find_unspent_tx_out(tx_in['tx_out_id'], tx_in['tx_out_index'], unspent_tx_outs)
     if not referenced_unspent_tx_out:
-        print('could not find referenced txOut')
-        raise
+        raise Exception('could not find referenced txOut')
 
     referenced_address = referenced_unspent_tx_out['address']
     signing_key = SigningKey.from_der(private_key.decode('hex'))
 
     if signing_key.get_verifying_key().to_der().encode('hex') != referenced_address:
-        print('trying to sign an input with private' +
+        raise Exception('trying to sign an input with private' +
             ' key that does not match the address that is referenced in txIn')
-        raise
 
     signature = signing_key.sign(tx_to_sign.encode()).encode('hex')
     return signature
@@ -267,7 +264,10 @@ def total_tx_out_values(transaction):
             .reduce(lambda a, b : (a + b), 0)
 
 def find_unspent_tx_out(transaction_id, index, a_unspent_tx_outs):
-    return next((u_tx_o for u_tx_o in a_unspent_tx_outs if u_tx_o['tx_out_id'] == transaction_id and u_tx_o['tx_out_index'] == index), None)
+    for u_tx_o in a_unspent_tx_outs:
+        if u_tx_o['tx_out_id'] == transaction_id and u_tx_o['tx_out_index'] == index:
+            return u_tx_o
+    return None
 
 def get_tx_in_amount(tx_in, a_unspent_tx_outs):
     return find_unspent_tx_out(tx_in['tx_out_id'], tx_in['tx_out_index'], a_unspent_tx_outs)['amount']

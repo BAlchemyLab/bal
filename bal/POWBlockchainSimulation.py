@@ -31,7 +31,7 @@ class POWBlockchainSimulation(POWBlockchain):
             for tx in transactions[1:]:
                 tx_id = tx['id']
                 with open(self.path + 'transaction_block-'+tx_id+'-'+self.name+'.txt', 'a+') as file:
-                    file.write(self.name + '---'+ 'sending tx with block' + '---' + str(ts))
+                    file.write(self.name + '---'+ 'sending tx with block ' + '---' + str(ts))
                     file.write('\n')
 
     def after_update_chain(self, block):

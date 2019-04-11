@@ -12,10 +12,10 @@ class TransactionPool:
 
     def add_to_transaction_pool(self, tx, unspent_tx_outs):
         if not validate_transaction(tx, unspent_tx_outs):
-            raise Exception('Trying to add invalid tx to pool')
+            raise Exception('Trying to add invalid tx to pool: ' + json.dumps(tx))
 
         if not self.is_valid_tx_for_pool(tx):
-            raise Exception('Trying to add invalid tx to pool')
+            raise Exception('Trying to add same tx to pool')
 
         print('adding to txPool: %s', json.dumps(tx))
         self.transaction_pool.append(tx.copy())

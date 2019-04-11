@@ -62,7 +62,6 @@ class P2P:
         will request the entire chain if needed"""
         for peer_str in self.peer_sockets:
             peer_addr = self.get_peer_tuple(peer_str)
-            print(self.transaction_pool().get_transaction_pool())
             self.query(peer_addr, Message(MessageType.RESPONSE_TRANSACTION_POOL, self.transaction_pool().get_transaction_pool(), self.p2p_addr))
 
     def send_message(self, peer_addr, data):
@@ -182,7 +181,7 @@ class P2P:
                             self.blockchain().handle_received_transaction(transaction)
                             self.broadcast_transaction_pool()
                         except Exception as e:
-                            traceback.print_exc()
+                            print(str(e))
             except pickle.UnpicklingError as e:
                 traceback.print_exc()
                 pass

@@ -8,6 +8,7 @@ from builtins import super
 import copy
 from functional import seq
 import numbers
+import threading
 
 from p2p import P2P
 from Transaction import new_coinbase_transaction, is_valid_address, process_transactions, new_transaction, COINBASE_AMOUNT
@@ -28,6 +29,7 @@ class BaseBlockchain(object):
         self.initial_difficulty = initial_difficulty
         self.chain = [self.genesis_block()]
         self.unspent_tx_outs = process_transactions(self.chain[0]['transactions'], [], 0) or []
+        self.lock = threading.RLock()
 
     @property
     def unspent_tx_outs(self):
@@ -126,18 +128,6 @@ class BaseBlockchain(object):
         transactions = [coinbase_tx] + self.transaction_pool.get_transaction_pool()
         return self.generate_raw_next_block(transactions)
 
-    def generate_next_block_with_transaction(self, receiver_address, amount):
-        if not is_valid_address(receiver_address):
-            raise('invalid address')
-
-        if not isinstance(amount, numbers.Number):
-            raise('invalid amount')
-
-        coinbase_tx = new_coinbase_transaction(get_public_from_wallet(), latest_block()['index'] + 1)
-        tx = create_transaction(receiver_address, amount, get_private_from_wallet(), self.get_unspent_tx_outs(), self.transaction_pool.get_transaction_pool())
-        block_data = [coinbase_tx, tx]
-        return self.generate_raw_next_block(block_data)
-
     def get_my_account_balance(self):
         return self.get_account_balance(get_public_from_wallet())
 
@@ -175,7 +165,8 @@ class BaseBlockchain(object):
 
     def handle_received_transaction(self, transaction):
         self.before_handle_received_transaction(transaction)
-        self.transaction_pool.add_to_transaction_pool(transaction, self.get_unspent_tx_outs())
+        with self.lock:
+            self.transaction_pool.add_to_transaction_pool(transaction, self.get_unspent_tx_outs())
         self.after_handle_received_transaction(transaction)
 
     def before_handle_received_transaction(self,transaction):
@@ -243,31 +234,33 @@ class BaseBlockchain(object):
 
     def add_block_to_chain(self, new_block):
         if self.is_valid_block(new_block, self.get_latest_block()):
-            ret_val = process_transactions(new_block['transactions'], self.get_unspent_tx_outs(), new_block['index'])
-            if ret_val:
-                self.before_update_chain(new_block)
-                self.chain.append(new_block)
-                self.unspent_tx_outs = ret_val
-                self.transaction_pool.update_transaction_pool(self.get_unspent_tx_outs())
-                self.after_update_chain(new_block)
-                return True
-            else:
-                print('block has wrong transactions')
-                return False
+            with self.lock:
+                ret_val = process_transactions(new_block['transactions'], self.get_unspent_tx_outs(), new_block['index'])
+                if ret_val:
+                    self.before_update_chain(new_block)
+                    self.chain.append(new_block)
+                    self.unspent_tx_outs = ret_val
+                    self.transaction_pool.update_transaction_pool(ret_val)
+                    self.after_update_chain(new_block)
+                    return True
+                else:
+                    print('block has wrong transactions')
+                    return False
         else:
             return False
 
     def replace_chain(self, chain):
         if self.valid_chain(chain) and self.get_accumulated_difficulty(chain) > self.get_accumulated_difficulty(self.chain):
-            self.chain = chain
-            a_unspent_tx_outs = []
-            for block in chain:
-                self.before_update_chain(block)
-                a_unspent_tx_outs = process_transactions(block['transactions'], a_unspent_tx_outs, block['index'])
-                self.unspent_tx_outs = a_unspent_tx_outs
-                self.transaction_pool.update_transaction_pool(self.get_unspent_tx_outs())
-                self.after_update_chain(block)
-            self.p2p.broadcast_latest()
+            with self.lock:
+                self.chain = chain
+                a_unspent_tx_outs = []
+                for block in chain:
+                    self.before_update_chain(block)
+                    a_unspent_tx_outs = process_transactions(block['transactions'], a_unspent_tx_outs, block['index'])
+                    self.unspent_tx_outs = a_unspent_tx_outs
+                    self.transaction_pool.update_transaction_pool(a_unspent_tx_outs)
+                    self.after_update_chain(block)
+                self.p2p.broadcast_latest()
         else:
             print('Received blockchain invalid')
             return False
