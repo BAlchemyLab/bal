@@ -30,13 +30,13 @@ from bcmn_simulation import *
 
 flatten = itertools.chain.from_iterable
 
-def simulate(host_type, host_number, miner_percentage, number_of_transactions, root_path):
+def simulate(host_type, host_number, miner_percentage, number_of_transactions, root_path, debug_mode):
     net = None
     try:
         start_time = time()
         timestamp_str = str(int(start_time))
         net_params = {'topo': None, 'build': False, 'host': host_type, 'switch': OVSKernelSwitch,
-                        'link': TCLink, 'ipBase': '10.0.0.0/8', 'waitConnected' : True, 'xterms': True}
+                        'link': TCLink, 'ipBase': '10.0.0.0/8', 'waitConnected' : True, 'xterms': debug_mode}
 
         switch_number = host_number / 4
         max_bw = 100
@@ -228,6 +228,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('-ht', '--host_type', default='pow', type=str, help='blockchain consensus class to be used')
     parser.add_argument('-p', '--path', default='/tmp/', type=str, help='where the logs will be located. default: /tmp/')
+    parser.add_argument('-d', '--debug', default=False, help='debug mode for xterms.', action='store_true')
     args = parser.parse_args()
     tmp_location = '/tmp/bcn'
     if os.path.exists(tmp_location):
@@ -244,7 +245,7 @@ def main():
     number_of_transactions = int(input("Number of repeated random transactions:"))
     number_of_simulations = int(input("Number of repeated simulations:"))
     for i in range(0, number_of_simulations):
-        simulate(host_type, host_number, miner_percentage, number_of_transactions, args.path)
+        simulate(host_type, host_number, miner_percentage, number_of_transactions, args.path, args.debug)
 
 if __name__ == '__main__':
     main()
