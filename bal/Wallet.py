@@ -82,7 +82,7 @@ def filter_tx_pool_txs(unspent_tx_outs, transaction_pool):
     return [tx for tx in unspent_tx_outs or [] if tx not in removable]
 
 def create_transaction(receiver_address, amount, private_key, unspent_tx_outs, tx_pool):
-    print('txPool: %s', json.dumps(tx_pool))
+    print('txPool: ', json.dumps(tx_pool))
     decoded = SigningKey.from_der(private_key.decode("hex"))
     my_address = decoded.get_verifying_key().to_der().encode('hex')
     my_unspent_tx_outs_a = find_unspent_tx_outs(my_address, unspent_tx_outs)

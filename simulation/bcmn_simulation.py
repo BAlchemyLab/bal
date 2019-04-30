@@ -40,7 +40,7 @@ def simulate(host_type):
         net.start()
 
         for node in net.hosts:
-            node.start()
+            node.start('/tmp/')
         sleep(2) # Wait for nodes to be started completely.
 
         generators = [h1, h2, h3, h4]
@@ -172,7 +172,7 @@ def add_host_helper(host_name, ip, switch, net):
     switch.attach(link.intf2)
     host.configDefault()
     sleep(2)
-    host.start()
+    host.start('/tmp/')
     makeTerms([host])
     return host
 
@@ -197,9 +197,9 @@ def main():
             print 'bcmn_simulation -ht <POW/POS>'
             sys.exit()
         elif opt in ("-ht", "--host_type"):
-            if arg == 'POW':
+            if arg == 'pow':
                 host_type = POWNode
-            elif arg == 'POS':
+            elif arg == 'pos':
                 host_type = POSNode
             else:
                 print 'Unknown host type: ' + arg

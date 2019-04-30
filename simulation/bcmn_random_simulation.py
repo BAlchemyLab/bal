@@ -241,6 +241,7 @@ def main():
     else:
         host_type = POWNode
 
+    #make this separate arguments
     if args.setup:
         host_numbers = [10, 20, 50, 100]
         miner_percentages = [10,20,50,80]
