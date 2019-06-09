@@ -108,8 +108,8 @@ class BaseBlockchain(object):
         next_index = previous_block['index'] + 1
         new_block = self.find_block(next_index, previous_block['hash'], transactions, difficulty)
         if self.add_block_to_chain(new_block):
-            self.p2p.broadcast_latest()
             self.after_generate_raw_next_block(new_block)
+            self.p2p.broadcast_latest()
             return new_block
         else:
             return None

@@ -5,7 +5,7 @@ import hashlib
 
 class POSBlockchainSimulation(POSBlockchain):
     def __init__(self, p2p_port, initial_difficulty, simulation_path, name):
-        super(POWBlockchainSimulation, self).__init__(p2p_port, initial_difficulty)
+        super(POSBlockchainSimulation, self).__init__(p2p_port, initial_difficulty)
         self.path = simulation_path
         self.name = name
 
