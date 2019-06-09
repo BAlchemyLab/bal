@@ -8,13 +8,12 @@ from time import sleep, time
 from mininet.topo import SingleSwitchTopo
 from mininet.net import Mininet
 from mininet.cli import CLI
-from mininet.node import Host, CPULimitedHost, OVSKernelSwitch, Switch
+from mininet.node import Host, CPULimitedHost, OVSBridge, Switch
 from mininet.util import specialClass
 from mininet.link import TCLink
 from mininet.term import makeTerms
 from bal.bcnode import POWNode, POSNode
 from bal.BaseBlockchain import BLOCK_GENERATION_INTERVAL
-import random_topology_generator as rtg
 from collections import defaultdict
 import random
 import itertools
@@ -25,28 +24,42 @@ import shutil
 import getopt
 import traceback
 from argparse import ArgumentParser
-from bcmn_simulation import *
-from simulation_tools import *
+import networkx as nx
+from simulation.bcmn_simulation import *
+from simulation.simulation_tools import *
+import complex_random_topology_generator as rtg
 
 flatten = itertools.chain.from_iterable
 
-def simulate(host_type, host_number, miner_percentage, number_of_transactions, root_path, debug_mode):
+def simulate(host_number, number_of_transactions, root_path):
+    timestamp_str = str(int(time()))
+    edge_number = 2 * host_number
+    adj_matrix = rtg.random_connected_graph(host_number, edge_number)
+    edge_list = rtg.graph_to_str(adj_matrix)
+    G = nx.parse_edgelist(edge_list, nodetype = int)
+    core_numbers = nx.core_number(G)
+    unique_cores = list(set(core_numbers.values()))
+
+    print("ks-cores :" + str(unique_cores))
+    for core_number in unique_cores:
+        print("Simulating with miner in ks:" + str(core_number))
+        miner_number = 1
+        miner_names = ['h'+ str(name) for name, core in core_numbers.items() if core == core_number][:miner_number]
+        subsimulation(adj_matrix, host_number, core_number, miner_names, root_path, number_of_transactions, timestamp_str, edge_list)
+
+def subsimulation(adj_matrix, host_number, k_shell_miner, miner_names, root_path, number_of_transactions, timestamp_str, edge_list):
     net = None
     try:
         start_time = time()
-        timestamp_str = str(int(start_time))
-        net_params = {'topo': None, 'build': False, 'host': host_type, 'switch': OVSKernelSwitch,
-                        'link': TCLink, 'ipBase': '10.0.0.0/8', 'waitConnected' : True, 'xterms': debug_mode}
-
-        switch_number = host_number / 4
-        max_bw = 100
-
-        net = rtg.random_topology(switch_number, host_number, max_bw, net_params)
+        net_params = {'topo': None, 'build': False, 'host': POWNode, 'switch': OVSBridge,
+                        'link': TCLink, 'ipBase': '10.0.0.0/8', 'waitConnected' : True, 'xterms': False}
+        net = rtg.mininet_topo(adj_matrix, net_params)
         net.build()
         net.start()
 
+        miners = [host for host in net.hosts if host.name in miner_names]
         verifier = random.choice(net.hosts)
-        parametered_path = 'h' + str(host_number) + 'm' + str(miner_percentage)
+        parametered_path = 'h' + str(host_number) + 'ks' + str(k_shell_miner)
         ts_dir_path = init_simulation_path(root_path + parametered_path + '/' + timestamp_str + '/')
 
         for node in net.hosts:
@@ -55,19 +68,18 @@ def simulate(host_type, host_number, miner_percentage, number_of_transactions, r
         sleep(2) # Wait for nodes to be started completely.
 
         peer_topology = register_peer_topology(net)
-        miner_number = (len(net.hosts)*miner_percentage / 100)
 
-        miners = random.sample(net.hosts, miner_number)
-
+        dump_graph(edge_list, ts_dir_path)
         dump_net(net, peer_topology, miners, ts_dir_path)
 
-        target_amount = 2
-        for node in net.hosts:
+        target_amount = 1
+        target_number = 10
+        for node in net.hosts[:target_number]:
             node.call('block/generate/loop/start', True)
 
         print("Waiting for block generations for initial target amounts.")
         generated = []
-        while len(generated) != len(net.hosts):
+        while len(generated) != target_number:
             sleep(BLOCK_GENERATION_INTERVAL)
             print('***** AMOUNT CONTROL *****')
             for h in net.hosts:
@@ -85,7 +97,8 @@ def simulate(host_type, host_number, miner_percentage, number_of_transactions, r
 
         i = 0
         while i < number_of_transactions:
-            sender, receiver = random.sample(net.hosts, 2)
+            receiver = random.sample([x for x in net.hosts if x not in miners], 1)[0]
+            sender = random.sample(miners, 1)[0]
             if send_and_log_transaction(sender, receiver, 1, ts_dir_path):
                 i = i + 1
                 sleep(1)
@@ -105,42 +118,26 @@ def simulate(host_type, host_number, miner_percentage, number_of_transactions, r
             net.stop()
         traceback.print_exc()
 
+def dump_graph(edge_list, dir_path):
+    with open(dir_path + 'graph.txt', 'w') as file:  # Use file to refer to the file object
+        file.write(str(edge_list))
+        file.write('\n')
 
 def main():
     host_type = None
     parser = ArgumentParser()
-    parser.add_argument('-ht', '--host_type', default='pow', type=str, help='blockchain consensus class to be used')
     parser.add_argument('-p', '--path', default='/tmp/', type=str, help='where the logs will be located. default: /tmp/')
-    parser.add_argument('-d', '--debug', default=False, help='debug mode for xterms.', action='store_true')
-    parser.add_argument('-s', '--setup', default=False, help='go with setup mode for h=10,20,50,100 m=10,20,50,80 tx=10, sim=10', action='store_true')
     args = parser.parse_args()
     tmp_location = '/tmp/bcn'
     if os.path.exists(tmp_location):
         shutil.rmtree('/tmp/bcn')
     setLogLevel( 'info' )
 
-    if args.host_type.find('pos') == 0:
-        host_type = POSNode
-    else:
-        host_type = POWNode
-
-    #make this separate arguments
-    if args.setup:
-        host_numbers = [10, 20, 50, 100]
-        miner_percentages = [10,20,50,80]
-        number_of_transactions = 10
-        number_of_simulations = 10
-        for pair in itertools.product(host_numbers, miner_percentages):
-            for i in range(0, number_of_simulations):
-                simulate(host_type, pair[0], pair[1], number_of_transactions, args.path, args.debug)
-
-    else:
-        host_number = int(input("Number of hosts(>10):"))
-        miner_percentage = int(input("Miner percentage (0-100):"))
-        number_of_transactions = int(input("Number of repeated random transactions:"))
-        number_of_simulations = int(input("Number of repeated simulations:"))
-        for i in range(0, number_of_simulations):
-            simulate(host_type, host_number, miner_percentage, number_of_transactions, args.path, args.debug)
+    host_number = int(input("Number of hosts(>10):"))
+    number_of_transactions = int(input("Number of repeated random transactions:"))
+    number_of_simulations = int(input("Number of repeated simulations:"))
+    for i in range(0, number_of_simulations):
+        simulate(host_number, number_of_transactions, args.path)
 
 if __name__ == '__main__':
     main()

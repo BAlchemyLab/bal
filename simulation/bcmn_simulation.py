@@ -150,41 +150,6 @@ def simulate(host_type):
         result=CLI(net)
         net.stop()
 
-def send_transaction(from_host, to_host, amount, silent = False):
-    to_host_addr = yaml.safe_load(to_host.call('address/my', True))['address']
-    transaction_param = '{"recipient": "%s", "amount": %f}' % (to_host_addr, amount)
-    from_host.call('transactions/send', silent, transaction_param)
-
-def register_peers(from_host, to_host):
-    peer_param = '{"peer": "%s:%s"}' % (to_host.IP(), to_host.socket)
-    from_host.call('peers/register', True, peer_param)
-
-def wait_and_forge_transactions(verifier, transaction_number):
-    current_transaction_pool = yaml.safe_load(verifier.call('transactions/pool', True))
-    while len(current_transaction_pool) < transaction_number:
-        sleep(0.5)
-        current_transaction_pool = yaml.safe_load(verifier.call('transactions/pool', True))
-    verifier.call('block/generate')
-
-def add_host_helper(host_name, ip, switch, net):
-    host = net.addHost(host_name, ip=ip, defaultRoute=None)
-    link = net.addLink(host, switch)
-    switch.attach(link.intf2)
-    host.configDefault()
-    sleep(2)
-    host.start('/tmp/')
-    makeTerms([host])
-    return host
-
-def verifier_check_amount(host, verifier):
-    host_addr = yaml.safe_load(host.call('address/my', True))['address']
-    req = 'balance/%s' % (host_addr,)
-    return yaml.safe_load(verifier.call(req, True))['balance']
-
-def open_mininet_cli(net):
-    print('Opening Mininet CLI before changing current topology (Closing CLI will resume the script)')
-    result=CLI(net)
-
 def main():
     host_type = None
     try:
