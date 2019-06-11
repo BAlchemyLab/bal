@@ -8,6 +8,8 @@ from mininet.link import Link, TCLink
 import math
 import itertools
 import sys
+import networkx as nx
+import numpy as np
 #make a class this module
 def graph_to_str(adj_matrix):
     str_matrix = []
@@ -22,6 +24,12 @@ def graph_to_str(adj_matrix):
 # Return a random integer between 0 and k-1 inclusive.
 def ran( k ):
     return random.randint(0, k-1)
+
+def nx_graph_to_adj_matrix(G):
+    nmp_matrix = nx.to_numpy_matrix(G, dtype=int)
+    fl = nmp_matrix.flatten()
+    adj_matrix = np.squeeze(np.asarray(fl))
+    return adj_matrix
 
 def random_connected_graph(v, e):
     adj_matrix = [0] * v * v

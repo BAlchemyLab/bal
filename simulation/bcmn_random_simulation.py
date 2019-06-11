@@ -15,9 +15,7 @@ from mininet.term import makeTerms
 from bal.bcnode import POWNode, POSNode
 from bal.BaseBlockchain import BLOCK_GENERATION_INTERVAL
 import random_topology_generator as rtg
-from collections import defaultdict
 import random
-import itertools
 import os
 from functools import partial
 from mininet.log import setLogLevel
@@ -27,8 +25,6 @@ import traceback
 from argparse import ArgumentParser
 from bcmn_simulation import *
 from simulation_tools import *
-
-flatten = itertools.chain.from_iterable
 
 def simulate(host_type, host_number, miner_percentage, number_of_transactions, root_path, debug_mode):
     net = None
