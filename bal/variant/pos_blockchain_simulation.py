@@ -1,4 +1,4 @@
-from POSBlockchain import POSBlockchain
+from bal.variant.pos_blockchain import POSBlockchain
 import numbers
 from time import time
 import hashlib

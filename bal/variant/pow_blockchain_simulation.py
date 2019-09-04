@@ -1,4 +1,4 @@
-from POWBlockchain import POWBlockchain
+from bal.variant.pow_blockchain import POWBlockchain
 import numbers
 from time import time
 import hashlib

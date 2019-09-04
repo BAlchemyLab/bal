@@ -12,7 +12,7 @@ from mininet.util import specialClass
 from mininet.link import TCLink
 from mininet.term import makeTerms
 from bal.bcnode import POWNode, POSNode
-from bal.BaseBlockchain import BLOCK_GENERATION_INTERVAL
+from bal.variant.base_blockchain import BLOCK_GENERATION_INTERVAL
 from bal.transaction import COINBASE_AMOUNT
 import random_topology_generator as rtg
 import random
