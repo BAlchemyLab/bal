@@ -3,7 +3,6 @@ from mininet.term import makeTerms
 from collections import defaultdict
 from mininet.node import Host, Switch
 import yaml
-import json
 import os
 import itertools
 flatten = itertools.chain.from_iterable

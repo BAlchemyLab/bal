@@ -4,16 +4,13 @@ Block[Chain] Node classes for Mininet.
 BCNodes provide a simple abstraction for interacting with Block[Chains]. Local nodes are simply one or more processes on the local machine.
 """
 
-import os, shlex
-
-from multiprocessing import Process
-
 from mininet.util import quietRun
 from mininet.moduledeps import pathCheck
 
-from mininet.cli import CLI
-from mininet.node import Host, CPULimitedHost
-from mininet.log import info, error, warn, debug
+from mininet.node import CPULimitedHost
+from mininet.log import debug
+
+import os
 
 #class BCNode( CPULimitedHost, CLI ):
 class BCNode( CPULimitedHost):

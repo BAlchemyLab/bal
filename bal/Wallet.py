@@ -1,6 +1,6 @@
 from ecdsa import SigningKey, SECP256k1
-from bal.transaction import get_transaction_id, sign_tx_in, new_transaction, new_tx_in, new_tx_out, new_unspent_tx_out, find_unspent_tx_out
-import numbers
+from bal.transaction import get_transaction_id, sign_tx_in, new_transaction, new_tx_in, new_tx_out, find_unspent_tx_out
+
 import os
 import json
 from functional import seq

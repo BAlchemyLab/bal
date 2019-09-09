@@ -1,7 +1,5 @@
 from bal.variant.pos_blockchain import POSBlockchain
-import numbers
 from time import time
-import hashlib
 
 class POSBlockchainSimulation(POSBlockchain):
     def __init__(self, p2p_port, initial_difficulty, simulation_path, name):

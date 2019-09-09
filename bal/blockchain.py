@@ -9,8 +9,6 @@ from bal.variant.pos_blockchain import POSBlockchain
 from bal.variant.pow_blockchain_simulation import POWBlockchainSimulation
 from bal.variant.pos_blockchain_simulation import POSBlockchainSimulation
 
-from bal.transaction import new_transaction
-from bal.transaction_pool import TransactionPool
 from bal.wallet import init_wallet, get_public_from_wallet, get_private_from_wallet, create_transaction
 
 import threading

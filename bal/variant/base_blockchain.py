@@ -2,16 +2,15 @@ import hashlib
 import json
 from time import time
 import shelve
-import functools
+
 import abc
-from builtins import super
 import copy
 from functional import seq
 import numbers
 import threading
 
 from bal.p2p import P2P
-from bal.transaction import new_coinbase_transaction, is_valid_address, process_transactions, new_transaction, COINBASE_AMOUNT
+from bal.transaction import new_coinbase_transaction, process_transactions
 from bal.transaction_pool import TransactionPool
 from bal.wallet import create_transaction, find_unspent_tx_outs, get_balance, get_private_from_wallet, get_public_from_wallet
 

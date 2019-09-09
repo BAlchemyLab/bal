@@ -1,12 +1,11 @@
 #!/usr/bin/python
 import random
 from mininet.net import Mininet
-from mininet.node import Controller, RemoteController, OVSBridge, UserSwitch, CPULimitedHost
+from mininet.node import OVSBridge, CPULimitedHost
 from mininet.cli import CLI
 from mininet.log import setLogLevel
-from mininet.link import Link, TCLink
-import itertools
-import sys
+from mininet.link import TCLink
+
 import math
 #make a class this module
 def graph_to_str(adj_matrix):

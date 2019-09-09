@@ -1,8 +1,5 @@
 from bal.variant.pow_blockchain import POWBlockchain
-import numbers
 from time import time
-import hashlib
-import fcntl
 
 class POWBlockchainSimulation(POWBlockchain):
     def __init__(self, p2p_port, initial_difficulty, simulation_path, name):
