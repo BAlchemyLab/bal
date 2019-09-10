@@ -71,7 +71,6 @@ def subsimulation(adj_matrix, host_number, k_shell_miner, miner_names, root_path
 
         peer_topology = register_peer_topology(net)
 
-        dump_graph(edge_list, ts_dir_path)
         dump_net(net, peer_topology, miners, ts_dir_path)
 
         target_amount = 10
@@ -130,11 +129,6 @@ def subsimulation(adj_matrix, host_number, k_shell_miner, miner_names, root_path
             open_mininet_cli(net)
             net.stop()
         traceback.print_exc()
-
-def dump_graph(edge_list, dir_path):
-    with open(dir_path + 'graph.txt', 'w') as file:  # Use file to refer to the file object
-        file.write(str(edge_list))
-        file.write('\n')
 
 def register_peer_topology(net):
     print("Registering peers")

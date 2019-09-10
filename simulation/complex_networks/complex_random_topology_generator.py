@@ -86,7 +86,6 @@ def mininet_topo(adj_matrix, net_params):
                 net.addLink(switches[i-1], switches[j-1])
     return net
 
-
 if __name__ == '__main__':
     setLogLevel( 'info' )
     host_number = int(input("Number of hosts:"))

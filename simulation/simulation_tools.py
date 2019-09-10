@@ -100,6 +100,11 @@ def dump_net(net, peer_topology, miners, dir_path):
             file.write(miner.name)
             file.write('\n')
 
+def dump_graph(edge_list, dir_path):
+    with open(dir_path + 'graph.txt', 'w') as file:  # Use file to refer to the file object
+        file.write(str(edge_list))
+        file.write('\n')
+
 def init_simulation_path(path):
     if not os.path.exists(path):
         os.makedirs(path)
