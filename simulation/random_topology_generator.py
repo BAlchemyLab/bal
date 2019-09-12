@@ -6,7 +6,7 @@ from mininet.cli import CLI
 from mininet.log import setLogLevel
 from mininet.link import TCLink
 from mininet.topo import Topo
-
+import networkx as nx
 import math
 
 def topo_to_edgelist(topo):
