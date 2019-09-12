@@ -12,7 +12,6 @@ from mininet.log import debug
 
 import os
 
-#class BCNode( CPULimitedHost, CLI ):
 class BCNode( CPULimitedHost):
     """A BCNode is a Node that is running (or has execed?) an
        block[chain] application."""
