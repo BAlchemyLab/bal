@@ -1,9 +1,9 @@
-from BaseBlockchain import BaseBlockchain
+from bal.variant.base_blockchain import BaseBlockchain
 import numbers
 from time import time
 import hashlib
-from Wallet import get_public_from_wallet
-from Transaction import COINBASE_AMOUNT
+from bal.wallet import get_public_from_wallet
+from bal.transaction import COINBASE_AMOUNT
 
 VALIDATING_WITHOUT_COIN = 10
 NO_STAKE_HELP_RATE = 10.0

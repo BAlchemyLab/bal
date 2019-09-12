@@ -3,15 +3,13 @@
 from flask import Flask, jsonify, request
 
 # Instantiate the peer
-from POWBlockchain import POWBlockchain
-from POSBlockchain import POSBlockchain
+from bal.variant.pow_blockchain import POWBlockchain
+from bal.variant.pos_blockchain import POSBlockchain
 
-from POWBlockchainSimulation import POWBlockchainSimulation
-from POSBlockchainSimulation import POSBlockchainSimulation
+from bal.variant.pow_blockchain_simulation import POWBlockchainSimulation
+from bal.variant.pos_blockchain_simulation import POSBlockchainSimulation
 
-from Transaction import new_transaction
-from TransactionPool import TransactionPool
-from Wallet import init_wallet, get_public_from_wallet, get_private_from_wallet, create_transaction
+from bal.wallet import init_wallet, get_public_from_wallet, get_private_from_wallet, create_transaction
 
 import threading
 import yaml

@@ -1,4 +1,4 @@
-import socket, select, pickle, threading
+import socket, pickle, threading
 from enum import Enum
 from time import sleep
 import json

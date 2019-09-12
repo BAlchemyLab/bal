@@ -1,14 +1,12 @@
 #!/usr/bin/python
 import random
 from mininet.net import Mininet
-from mininet.node import Controller, RemoteController, OVSBridge, UserSwitch, CPULimitedHost
+from mininet.node import OVSBridge, CPULimitedHost
 from mininet.cli import CLI
 from mininet.log import setLogLevel
-from mininet.link import Link, TCLink
+from mininet.link import TCLink
 from mininet.topo import Topo
 import networkx as nx
-import itertools
-import sys
 import math
 
 def topo_to_edgelist(topo):
