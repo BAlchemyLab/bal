@@ -1,7 +1,6 @@
-from BaseBlockchain import BaseBlockchain
+from bal.variant.base_blockchain import BaseBlockchain
 import numbers
 from time import time
-import hashlib
 
 class POWBlockchain(BaseBlockchain):
     def genesis_block(self):
