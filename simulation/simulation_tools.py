@@ -3,7 +3,6 @@ from mininet.term import makeTerms
 from collections import defaultdict
 from mininet.node import Host, Switch
 import yaml
-import json
 import os
 import itertools
 flatten = itertools.chain.from_iterable
@@ -99,6 +98,11 @@ def dump_net(net, peer_topology, miners, dir_path):
         for miner in miners:
             file.write(miner.name)
             file.write('\n')
+
+def dump_graph(edge_list, dir_path):
+    with open(dir_path + 'graph.txt', 'w') as file:  # Use file to refer to the file object
+        file.write(str(edge_list))
+        file.write('\n')
 
 def init_simulation_path(path):
     if not os.path.exists(path):

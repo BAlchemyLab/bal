@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 
 import sys
-import yaml
-import json
 
 from time import sleep
-from mininet.topo import SingleSwitchTopo
 from mininet.net import Mininet
 from mininet.cli import CLI
-from mininet.node import Host, CPULimitedHost, OVSKernelSwitch
-from mininet.util import specialClass
-from mininet.term import makeTerms
+from mininet.node import OVSKernelSwitch
 from bal.bcnode import POWNode, POSNode
 import os
-from functools import partial
 from mininet.log import setLogLevel
 import shutil
 import getopt

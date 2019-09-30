@@ -1,11 +1,9 @@
 from functional import seq
-from ecdsa import VerifyingKey, SigningKey, NIST192p
+from ecdsa import VerifyingKey, SigningKey
 import numbers
 import re
 import json
 import hashlib
-from itertools import chain
-from functools import reduce
 COINBASE_AMOUNT = 1
 
 def new_unspent_tx_out(tx_out_id, tx_out_index, address, amount):
