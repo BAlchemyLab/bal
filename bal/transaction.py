@@ -89,7 +89,7 @@ def validate_coinbase_tx(transaction, block_index):
         return False
 
     if transaction['tx_ins'][0]['tx_out_index'] != block_index:
-        print('the txIn signature in coinbase tx must be the block height')
+        print('the txIn index in coinbase tx must be the block height')
         return False
 
     if len(transaction['tx_outs']) != 1:
