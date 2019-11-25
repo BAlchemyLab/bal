@@ -4,7 +4,7 @@ The source code of originally based on post on [Building a Blockchain](https://m
 
 ## Installation
 
-1. Make sure [Python](https://www.python.org/downloads/) 2 or 3 is installed.
+1. Make sure [Python](https://www.python.org/downloads/) 2.7x is installed.
 
 
 2. Install requirements (preferably inside a [virtual environment](https://docs.python.org/3/tutorial/venv.html)).  
