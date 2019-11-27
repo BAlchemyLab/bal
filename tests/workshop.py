@@ -1,0 +1,20 @@
+from bal.transaction import *
+
+
+test_new_tx_in_1 = new_tx_in("testId270", 0, "testSignature760")
+test_new_tx_in_2 = new_tx_in("testId271", 1, "testSignature761")
+test_new_tx_ins = [test_new_tx_in_1, test_new_tx_in_2]
+test_new_tx_out_1 = new_tx_out('7D5DE87852BF649EA590D4ABCBCF3A0D4EBD8889ECC6F07A1FFFC33B091F1AABE76C9AB771C878E99FC30FFAE7B5875FCF69F20AC3079D47DD568FED204B81F3F5B4F6BC24AAEEACCFA7B5D6AFE0BB469E12DFE37D1CD54C',
+500)
+test_new_tx_out_2 = new_tx_out('43F66BF91359F2DEBD980EE47F9BF230602CBAACAB9AD1C8BDBAF86D58EA597F953D190D05DFB2269E73E0DA6A2DC29F11593AC7FC2F6EFE59C3265DFD4A967BCDCFA5E47D5FD44678D4903E8B59AF52E9385C4CEE70718C',
+501)
+test_new_tx_outs = [test_new_tx_out_1, test_new_tx_out_2]
+test_new_transaction = new_transaction('id', test_new_tx_ins, test_new_tx_outs)
+reel_id = get_transaction_id(test_new_transaction)
+test_new_transaction['id'] = reel_id
+test_new_unspent_tx_out_1 = new_unspent_tx_out('testId270', 0, '7D5DE87852BF649EA590D4ABCBCF3A0D4EBD8889ECC6F07A1FFFC33B091F1AABE76C9AB771C878E99FC30FFAE7B5875FCF69F20AC3079D47DD568FED204B81F3F5B4F6BC24AAEEACCFA7B5D6AFE0BB469E12DFE37D1CD54C',
+500)
+test_new_unspent_tx_out_2 = new_unspent_tx_out('testId271', 1, '43F66BF91359F2DEBD980EE47F9BF230602CBAACAB9AD1C8BDBAF86D58EA597F953D190D05DFB2269E73E0DA6A2DC29F11593AC7FC2F6EFE59C3265DFD4A967BCDCFA5E47D5FD44678D4903E8B59AF52E9385C4CEE70718C',
+501)
+test_new_unspent_tx_outs = [test_new_unspent_tx_out_1, test_new_unspent_tx_out_2]
+print(validate_transaction(test_new_transaction, test_new_unspent_tx_outs))
