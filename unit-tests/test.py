@@ -63,6 +63,19 @@ class TestTransactionMethods(unittest.TestCase):
         self.assertEqual(intended_result,
         example_get_transaction_id)
 
+    def test_is_valid_tx_in_structure(self):
+        example_new_tx_in_1 = new_tx_in("testId270", 0, "testSignature760")
+        example_is_valid_tx_in_structure = is_valid_tx_in_structure(example_new_tx_in_1)
+
+        self.assertEqual(True, example_is_valid_tx_in_structure)
+
+    def test_is_valid_tx_out_structure(self):
+        example_new_tx_out_1 = new_tx_out("A61B5BE06CD7FE6D95064DAC98C97C9C8D128BEFACF7EA655D4EDF5B09B7DFAB6D059DD0A64B8C3CE9A11FEDC38143819BDF9CD4BC23EDCECFBAEB7DECACC81FE84CA7DE4AD33C89C9E848A5A8E8BDFD3BEA7BB3C4F81B4D", 500)
+        example_is_valid_tx_out_structure = is_valid_tx_out_structure(example_new_tx_out_1)
+
+        self.assertEqual(True, example_is_valid_tx_out_structure)
+
+
     def test_is_valid_transaction_structure(self):
         example_new_tx_in_1 = new_tx_in("testId270", 0, "testSignature760")
         example_new_tx_in_2 = new_tx_in("testId271", 1, "testSignature761")
@@ -81,12 +94,20 @@ class TestTransactionMethods(unittest.TestCase):
         example_new_tx_in_1 = new_tx_in("testId270", 0, "testSignature760")
         example_new_tx_in_2 = new_tx_in("testId271", 1, "testSignature761")
         example_new_tx_ins = [example_new_tx_in_1, example_new_tx_in_2]
-        example_new_tx_out_1 = new_tx_out("testAddress660", 500)
-        example_new_tx_out_2 = new_tx_out("testAddress661", 501)
+        example_new_tx_out_1 = new_tx_out("A61B5BE06CD7FE6D95064DAC98C97C9C8D128BEFACF7EA655D4EDF5B09B7DFAB6D059DD0A64B8C3CE9A11FEDC38143819BDF9CD4BC23EDCECFBAEB7DECACC81FE84CA7DE4AD33C89C9E848A5A8E8BDFD3BEA7BB3C4F81B4D", 500)
+        example_new_tx_out_2 = new_tx_out("561B5BE06CD7FE6D95064DAC98C97C9C8D128BEFACF7EA655D4EDF5B09B7DFAB6D059DD0A64B8C3CE9A11FEDC38143819BDF9CD4BC23EDCECFBAEB7DECACC81FE84CA7DE4AD33C89C9E848A5A8E8BDFD3BEA7BB3C4F81B4D", 501)
         example_new_tx_outs = [example_new_tx_out_1, example_new_tx_out_2]
         example_new_transaction = new_transaction("testId28", example_new_tx_ins, example_new_tx_outs)
+        example_get_transaction_id = get_transaction_id(example_new_transaction)
+        example_new_transaction['id'] = example_get_transaction_id
+        example_new_unspent_tx_out_1 = new_unspent_tx_out("testId270", 0, "testAddress66", 500)
+        example_new_unspent_tx_out_2 = new_unspent_tx_out("testId271", 1, "testAddress67", 501)
+        example_a_unspent_tx_outs = [example_new_unspent_tx_out_1, example_new_unspent_tx_out_2]
+        example_validate_transaction = validate_transaction(example_new_transaction, example_a_unspent_tx_outs)
+
         ### work in progress
 
+        self.assertEqual(True, example_validate_transaction)
 
 
 
