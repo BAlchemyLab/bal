@@ -1,5 +1,5 @@
 import unittest
-from bal.transaction import *
+from bal.Transaction import *
 
 class TestTransactionMethods(unittest.TestCase):
 
@@ -104,7 +104,7 @@ class TestTransactionMethods(unittest.TestCase):
         example_new_unspent_tx_out_2 = new_unspent_tx_out("testId271", 1, "testAddress67", 501)
         example_a_unspent_tx_outs = [example_new_unspent_tx_out_1, example_new_unspent_tx_out_2]
         example_validate_transaction = validate_transaction(example_new_transaction, example_a_unspent_tx_outs)
-        ### tx HAVE to be signed
+
         ### work in progress
 
         self.assertEqual(True, example_validate_transaction)
