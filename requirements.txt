@@ -16,7 +16,7 @@ jsonpickle==1.0
 MarkupSafe==1.0
 marshmallow==2.16.3
 PyFunctional==1.2.0
-PyYAML==3.13
+PyYAML==5.1
 requests==2.18.4
 six==1.11.0
 sqlparse==0.2.4
